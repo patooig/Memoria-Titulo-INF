@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busqueda</title>
+</head>
+
+<body>
+
+<h2>Consulta Module</h2>
+
+<form action="/buscarPorModulo" method="POST">
+  <label for="entry-modulo">Modulo</label>
+  <input type="text" name="entry-modulo" id="entry-modulo" required>
+
+  <label for="entry-date">Fecha</label>
+  <input type="date" id="entry-date" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+
+  <button type="submit">Enviar</button>
+</form> 
+
+<p>El numero de cambios es {{numdatos}}</p>
+
+<table>
+  <thead>
+    <tr>
+      <td>Fecha</td>
+      <td>Node</td>
+      <td>Unit</td>
+      <td>Module</td>
+      <td>Module_Description</td>
+      <td>Attribute</td>
+      <td>Desc1</td>
+      <td>Desc2</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{row.Date_Time}}</td>
+      <td>{{row.Node}}</td>
+      <td>{{row.Unit}}</td>
+      <td>{{row.Module}}</td>
+      <td>{{row.Module_Description}}</td>
+      <td>{{row.Attribute}}</td>
+      <td>{{row.Desc1}}</td>
+      <td>{{row.Desc2}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+</body>
+</html>

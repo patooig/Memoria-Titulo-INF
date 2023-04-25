@@ -1,0 +1,34 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+
+<body>
+    <a href="javascript:history.back()" > Atrás</a>
+    <h2>Detalles del módulo {{mod}}</h2>
+    <h3>Fecha: {{date}}</h3>
+    <h4>Tipos includos: 'CHANGE', 'ALARM', 'EVENT'</h4>
+    
+    <table style="border-spacing: 10px;">
+        <thead>
+            <td style="font-weight:bold">Fecha</td>
+            <td style="font-weight:bold">Module description</td>
+            <td style="font-weight:bold">Desc2</td>
+        </thead>
+    <tbody>
+        {% for r in rows %}
+        <tr>
+            <td>{{r.Date_Time}}</td>
+            <td>{{r.Module_Description}}</td>
+            <td>{{r.Desc2}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+        
+    </table>
+</body>
+</html>

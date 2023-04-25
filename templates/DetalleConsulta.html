@@ -1,0 +1,30 @@
+TABLA PARA EL DETALLE DE LA CONSULTA
+
+<table>
+    <thead>
+      <tr>
+        <td>Fecha</td>
+        <td>Node</td>
+        <td>Unit</td>
+        <td>Module</td>
+        <td>Module_Description</td>
+        <td>Attribute</td>
+        <td>Desc1</td>
+        <td>Desc2</td>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{row.Date_Time}}</td>
+        <td>{{row.Node}}</td>
+        <td>{{row.Unit}}</td>
+        <td>{{row.Module}}</td>
+        <td>{{row.Module_Description}}</td>
+        <td>{{row.Attribute}}</td>
+        <td>{{row.Desc1}}</td>
+        <td>{{row.Desc2}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>

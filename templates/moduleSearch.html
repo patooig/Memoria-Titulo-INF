@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busqueda</title>
+</head>
+
+<script>
+  const form = document.querySelector('form')
+  const mensaje = document.getElementById('mensaje')
+  const textoEnviado = document.getElementById('texto-enviado')
+  
+  form.addEventListener('submit',function(event) {
+    event.preventDefault();
+    mensaje.style.display = 'block'
+    textoEnviado.textContent = form.entry-modulo.value
+  })
+
+</script>
+
+<body>
+
+  <a href="/">Atrás</a>
+
+<h2>Consulta Modulo</h2>
+
+<form action="/moduleSearch" method="POST">
+
+
+  <label for="entry-modulo">Modulo</label>
+  <input type="text" name="entry-modulo" id="entry-modulo" required>
+
+  <label for="entry-date-ini">Fecha inicial</label>
+  <input type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+
+  <label for="entry-date-fin">Fecha final</label>
+  <input type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+
+  <button type="submit">Enviar</button>
+</form> 
+
+
+<p>El numero de cambios es {{numdatos}}</p>
+
+<table style="border-spacing: 10px;">
+  <thead>
+    <tr>
+      <td>Dia</td>
+      <td>Numero de cambios</td>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in rows %}
+    <tr>
+      <td>{{row.Dia}}</td>
+      <td>{{row.NumCambios}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div id="mensaje" style="display: none;">
+  Holaaaaaaaaaaa
+  <p id="texto-enviado"></p>
+</div>
+
+</body>
+</html>

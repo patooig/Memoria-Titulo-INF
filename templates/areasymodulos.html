@@ -1,0 +1,43 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Áreas y Módulos</title>
+    <script>
+        function mostrarModulos(){
+            var opcion = document.getElementById('opciones')
+        }
+    </script>
+</head>
+<body>
+ <a href="/">Atrás</a>
+ <h2>Areas y modulos</h2>
+
+ 
+ <form action="/areasymodulos" method="post">
+    <label for="opciones">Selecciona un área:</label>
+    <select name="opciones" id="opciones">
+        {% for op in areas %}
+        <option value="{{op}}">{{ op }}</option>
+        {% endfor %}
+    </select>
+    <input type="submit" value="Enviar">
+ </form>
+
+
+ <table style="border-spacing: 10px;">
+    <tbody>
+        
+        {% for mod in res %}
+        <tr>
+            <td>{{mod}}</td>
+            <td>{{dictt[mod]}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+ </table>
+
+
+</body>
+</html>
