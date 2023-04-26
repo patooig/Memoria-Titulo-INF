@@ -8,64 +8,77 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busqueda</title>
+
 </head>
 
 <body>
 
-    <a href="/">Atrás</a>
-    <H2>Módulos más frecuentes por área</H2>
-    <h4>Cambios de tipo 'CHANGE'</h4>
-    <form method="POST">
-
-        <label for="areas">Selecciona un área:</label>
-        
-        <select name="areas" id="areas" required>
-          <option value="" >Seleccione una opción</option>
-            {% for op in areas %}
-            <option value="{{op}}">{{ op }}</option>
-            {% endfor %}
-        </select>
-        
-        
-        <label for="entry-date-ini">Fecha inicial</label>
-        <input type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
-      
-        <label for="entry-date-fin">Fecha final</label>
-        <input type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
-      
-        <input type="submit" value="Enviar" onclick="headerTable()">
-    </form>
+  
 
    
-    
-    <table id="tabla1" style="border-spacing: 10px;">
-        <thead>
-          <tr>
-            <td style="font-weight:bold">Día</td>
-            <td style="font-weight:bold">Módulo</td>
-            <td style="font-weight:bold">Descripcion del Módulo</td>
-            <td style="font-weight:bold">Número de cambios</td>
-            <td style="font-weight:bold">Detalle</td>
-          </tr>
-        </thead>
-        <tbody>
-          {% for d in data %}
-          <tr>
-            <td>{{d.Dia}}</td>
-            <td>{{d.Module}}</td>
-            <td>{{d.Module_Description}}</td>
-            <td>{{d.conteo}}</td>
-            <td><a href="/detallemodulo/{{d.Module}}/{{d.Dia}}">Ver detalle</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    </form>
 
-      <script>
-        function headerTable(){
-            let element = document.getElementById("tabla1");
-            element.removeAttribute("hidden");
-        }
-    </script>
+    <div class="container-fluid">
+      <a href="/">Atrás</a>
+      <H2>Módulos más frecuentes por área</H2>
+      <h4>Cambios de tipo 'CHANGE'</h4>
+      <form method="POST">
+  
+          <label for="areas">Selecciona un área:</label>
+          
+          <select name="areas" id="areas" required>
+            <option value="" >Seleccione una opción</option>
+              {% for op in areas %}
+              <option value="{{op}}">{{ op }}</option>
+              {% endfor %}
+          </select>
+          
+          
+          <label for="entry-date-ini">Fecha inicial</label>
+          <input type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+        
+          <label for="entry-date-fin">Fecha final</label>
+          <input type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+        
+          <input type="submit" value="Enviar" onclick="headerTable()">
+
+
+      
+
+      <!-- DataTales Example -->
+      <div class="card shadow mb-4">
+          <div class="card-header py-3">
+          </div>
+          <div class="card-body">
+              <div class="table-responsive">
+                  <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                      <thead>
+                          <tr>
+                            <th >Día</th>
+                            <th >Módulo</th>
+                            <th >Descripcion del Módulo</th>
+                            <th >Número de cambios</th>
+                            <th >Detalle</th>
+                          </tr>
+                      </thead>
+                      <tbody>
+                        {% for d in data %}
+                        <tr>
+                          <td>{{d.Dia}}</td>
+                          <td>{{d.Module}}</td>
+                          <td>{{d.Module_Description}}</td>
+                          <td>{{d.conteo}}</td>
+                          <td><a href="/moduleDetails/{{d.Module}}/{{d.Dia}}">Ver detalle</a></td>
+                        </tr>
+                        {% endfor %}
+                          
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+
+  </div>
+    
       
 </body>

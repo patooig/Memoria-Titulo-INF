@@ -18,7 +18,7 @@
  <form action="/areasymodulos" method="post">
     <label for="opciones">Selecciona un área:</label>
     <select name="opciones" id="opciones">
-        {% for op in areas %}
+        {% for op in list_areas %}
         <option value="{{op}}">{{ op }}</option>
         {% endfor %}
     </select>

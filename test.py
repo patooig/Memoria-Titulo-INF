@@ -82,26 +82,13 @@ def analisis_lavado():
 
 
 @app.route('/areasymodulos', methods = ["GET","POST"])
-def areasymodulos():
-    cursor = connection.cursor()
-    cursor.execute("SELECT * FROM dbo.AreasYModulos")
-    data = cursor.fetchall()
-
-    areas = []
-    for d in data:
-            aux = str(d)
-            aux = aux.replace('(','').replace(')','').replace("'",'')
-            aux = aux.split(',')
-            areas.append(aux[0])
-
-
-    areaaa = set(areas)
+def areasymodulos():  
     res = ""
     if request.method == "POST":
         option = request.form["opciones"]
         res = global_dictAreas[option]
   
-    return render_template('areasymodulos.html',areas=areaaa,dictt = global_dictAreas,res=res)
+    return render_template('areasymodulos.html',list_areas=global_areas,dictt = global_dictAreas,res=res)
 
 def getDictOfAreas():
     cursor = connection.cursor()
@@ -147,15 +134,16 @@ def getListOfAreas():
 def modulosFrecuentesporArea():
 
     if request.method == 'POST':
-        area = request.form["areas"]
-        fecha_inicial = request.form["entry-date-ini"]
-        fecha_final = request.form["entry-date-fin" ]
 
+        area          = request.form["areas"]
+        fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
+        fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
+
+        print(area,fecha_inicial,fecha_final)
+       
         cursor = connection.cursor()
-        if (fecha_inicial == fecha_final):
-            cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time = ?  GROUP BY CONVERT(date,j.Date_Time),j.Module,j.Module_Description ORDER BY conteo DESC", area,fecha_inicial)
-        else:   
-            cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+          
+        cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
 
         data = cursor.fetchall()              
 
@@ -190,5 +178,6 @@ global_dictAreas , global_dictModule = getDictOfAreas() #Variable global con el 
 
 if __name__ == '__main__':
     
-    app.run(debug = True)
+    #app.run(debug=True, use_debugger=False, use_reloader=False) #Use production server
+    app.run(debug=True) #Use development server
     
