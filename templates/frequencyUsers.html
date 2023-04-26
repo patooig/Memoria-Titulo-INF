@@ -1,0 +1,111 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+
+    <title>Cambios de usuarios</title>
+    <style>
+        #chart {
+          float: left;
+          width: 50%;
+        }
+        #space {
+          float: left;
+          width: 5%;
+        }
+        #dataTable {
+          float: left;
+          width: 50%;
+
+        }
+      </style>
+</head>
+
+<body>
+   
+
+    
+    
+        <a class= "btn btn-secondary" href="/">Atrás</a>
+        <h2>Usuarios que han hecho cambios</h2>
+    
+
+    <form class="form-inline" method="POST" id="formUser">
+        <div class="form-group">
+            <label for="opciones">Selecciona un área:</label>
+            <select class="form-control" name="areas" id="areas" required>
+            <option value="" >Seleccione una opción</option>
+                {% for op in areas %}
+                <option value="{{op}}">{{ op }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div id="space"></div>
+
+        <label  for="entry-date-ini">Fecha inicial </label>
+        <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+
+        <label for="entry-date-fin">Fecha final </label>
+        <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+
+        <button type="submit" class="btn btn-primary"> Enviar</button>
+        
+    </form>
+
+    {% if datos %}
+        <h3>Usuarios que más cambios han realizado</h3>
+        <h5>En el área de {{area}}</h5>
+        <h5>En el periodo de {{fecha_ini}} a {{fecha_fin}}</h5>
+    {% endif %}
+
+     <!-- Contenedor principal -->
+	<div class="container-fluid">
+		<!-- Div para el gráfico -->
+		<div id="chart"></div>
+		<!-- Div para la tabla -->
+        <div id="space"></div>
+        <!-- Div para la tabla -->
+		<div id="dataTable"></div>
+        <div id="space"></div>
+	</div>
+    
+    {% if datos %}
+    <table class="table table-bordered" id="dataTable">
+        <thead>
+            <tr>
+              <th >Usuario</th>
+              <th >Num. cambios</th>
+            </tr>
+        </thead>
+        <tbody>
+          {% for d in datos %}
+          <tr>
+            <td>{{d.Desc1}}</td>
+            <td>{{d.Apariciones}}</td>
+          </tr>
+          {% endfor %}
+            
+        </tbody>
+    </table>
+    {% endif %}
+
+   
+
+</body>
+
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script type='text/javascript'>
+  var graphs = {{ graphJSON | safe }};
+  Plotly.plot('chart',graphs,{});
+</script>
+
+
+
+</html>
+
+

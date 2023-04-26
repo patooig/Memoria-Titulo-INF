@@ -81,6 +81,43 @@ def analisis_lavado():
     return render_template('analisis_lavado.html')
 
 
+@app.route('/frequencyUsers',methods=['GET','POST'])
+def frequencyUsers():
+    if request.method == 'POST':
+        fecha_inicial = request.form['entry-date-ini'] + " 00:00:00"
+        fecha_final   = request.form['entry-date-fin'] + " 23:59:59"
+        area          = request.form['areas']
+
+        cursor = connection.cursor()
+        cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
+        datos = cursor.fetchall()
+
+
+        #Crear diccionario para luego poder graficar con plotly
+        diccionario = dict()
+        for d in datos:
+            diccionario[d[0]] = d[1]
+        
+        #Graficar
+
+        fig = px.pie(values=diccionario.values(), names=diccionario.keys(), title='Frecuencia de usuarios')
+        #Mas grande el grafico
+        #No quiero que diga 'label' en el grafico
+        fig.update_traces(textposition='inside', textinfo='percent+label')
+        fig.update_layout(
+            autosize=False,
+            width=700,
+            height=700,
+            )
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+
+        return render_template('frequencyUsers.html',areas=global_areas,datos=datos, graphJSON=graphJSON, area=area, fecha_ini=fecha_inicial, fecha_fin=fecha_final)
+    else:
+        return render_template('frequencyUsers.html',areas=global_areas)
+    
+
+
 @app.route('/areasymodulos', methods = ["GET","POST"])
 def areasymodulos():  
     res = ""
