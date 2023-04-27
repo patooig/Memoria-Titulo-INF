@@ -29,8 +29,8 @@ def moduleSearch():
         print(modulo,fecha_inicial,fecha_final)
         cursor = connection.cursor()
         cursor.execute( "SELECT CONVERT(date, j.Date_time) as Dia,COUNT (j.Module) as NumCambios FROM DB004.dbo.Journal as j WHERE j.Date_Time >= ? and j.Date_Time <= ?  and j.Module = ? GROUP BY CONVERT(date, j.Date_time) ORDER BY Dia",fecha_inicial,fecha_final,modulo)
-        #cursor.execute("SELECT * FROM dbo.JournalChangeLavado as j WHERE j.Date_Time >= ? and j.Date_Time <= ? and j.Attribute not like '%NALM' and J.Attribute not like 'ALARMS%' and j.Module = ? ORDER BY j.Date_Time",(fecha_inicial,fecha_final,modulo))
         rows=cursor.fetchall()
+        cursor.close()
 
         cambios=0
 
@@ -47,18 +47,7 @@ def moduleSearch():
         return render_template('moduleSearch.html',rows=rows,numdatos=numdatos,areas=global_areas)
     else:
         return render_template('moduleSearch.html', areas=global_areas)
-    
-@app.route('/test',methods=['GET'])
-def test():
-    df = pd.DataFrame({
-      'Fruit': ['Apples', 'Oranges', 'Bananas', 'Apples', 'Oranges', 
-      'Bananas'],
-      'Amount': [4, 1, 2, 2, 4, 5],
-      'City': ['SF', 'SF', 'SF', 'Montreal', 'Montreal', 'Montreal']
-   })
-    fig = px.bar(df, x='Fruit', y='Amount', color='City', barmode='group')
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)   
-    return render_template('test.html', graphJSON=graphJSON)
+ 
     
 
 @app.route('/',methods = ['GET'])
@@ -70,15 +59,12 @@ def home():
 def detalleModulo(module,date):
     cursor = connection.cursor()
     fecha_inicial = date + " 00:00:00"
-    fecha_final = date + " 23:59:59"
+    fecha_final   = date + " 23:59:59"
     cursor.execute("SELECT * FROM dbo.Journal as j WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? ORDER BY j.Date_Time ASC",(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
+    cursor.close()
     return render_template('moduleDetails.html',rows=rows,mod = module, date = date)
     
-@app.route('/analisis_lavado',methods = ['GET'])
-def analisis_lavado():
-    
-    return render_template('analisis_lavado.html')
 
 
 @app.route('/frequencyUsers',methods=['GET','POST'])
@@ -91,18 +77,15 @@ def frequencyUsers():
         cursor = connection.cursor()
         cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
         datos = cursor.fetchall()
+        cursor.close()
 
-
-        #Crear diccionario para luego poder graficar con plotly
+        #Diccionario para luego poder graficar con plotly
         diccionario = dict()
         for d in datos:
             diccionario[d[0]] = d[1]
         
-        #Graficar
-
+        #Grafico con plotly
         fig = px.pie(values=diccionario.values(), names=diccionario.keys(), title='Frecuencia de usuarios')
-        #Mas grande el grafico
-        #No quiero que diga 'label' en el grafico
         fig.update_traces(textposition='inside', textinfo='percent+label')
         fig.update_layout(
             autosize=False,
@@ -168,42 +151,57 @@ def getListOfAreas():
 
 
 @app.route('/frecuentesChangeArea',methods=['GET','POST'])
-def modulosFrecuentesporArea():
+def frecuentesChangeArea():
 
     if request.method == 'POST':
-
+        #Obtener datos del formulario
         area          = request.form["areas"]
         fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
-        print(area,fecha_inicial,fecha_final)
-       
+       #Consulta a la base de datos
         cursor = connection.cursor()
-          
-        cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+        cursor.execute("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+        data = cursor.fetchall()   
+        cursor.close()
 
-        data = cursor.fetchall()              
+       
+        #Creamos dataframe 
+        df = pd.DataFrame()
+        df['Modulo'] = [d[0] for d in data]
+        df['Descripcion'] = [d[1] for d in data]
+        df['Cambios'] = [d[2] for d in data]
 
-        return render_template('frecuentesChangeArea.html',areas=global_areas,data=data)
+        #Grafico con plotly
+        fig = px.bar(df, x="Modulo", y="Cambios", color="Modulo", title="Frecuencia de modulos")
+        fig.update_layout(
+            autosize=False,
+            width=700,
+            height=700,
+            )
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+
+       
+
+        return render_template('frecuentesChangeArea.html',areas=global_areas,data=data,graphJSON=graphJSON)
     else:
-        return render_template('frecuentesChangeArea.html', areas=global_areas)
+        return render_template('frecuentesChangeArea.html',areas=global_areas)
     
 
 @app.route('/frecuentesJournal',methods=['GET','POST'])
 def frecuentesJournal():
 
     if request.method == 'POST':
-        area = request.form["opciones"]
-        fecha_inicial = request.form["entry-date-ini"]
-        fecha_final = request.form["entry-date-fin" ]
+        area          = request.form["opciones"]
+        fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
+        fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
-        cursor = connection.cursor()
-        if (fecha_inicial == fecha_final):
-            cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.Journal as j WHERE j.Area = ? and j.Date_Time = ?  GROUP BY CONVERT(date,j.Date_Time),j.Module,j.Module_Description ORDER BY conteo DESC", area,fecha_inicial)
-        else:   
-            cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.Journal as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+        cursor = connection.cursor()  
+        cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.Journal as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
 
-        data = cursor.fetchall()              
+        data = cursor.fetchall()   
+        cursor.close()           
 
         return render_template('frecuentesJournal.html',areas=global_areas,data=data)
     else:
