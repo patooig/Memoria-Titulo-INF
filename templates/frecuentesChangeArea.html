@@ -12,7 +12,17 @@
     <title>Busqueda</title>
 
 </head>
+<style>
+  #chart{
+    float: left;
+    width: 50%;
+  }
+  #tabla1 {
+    float: left;
+    width: 50%;
 
+  }
+</style>
 <body>
 
     <a class= "btn btn-secondary" href="/">Atrás</a>
@@ -43,9 +53,14 @@
           <button type="submit" class="btn btn-primary">Buscar</button>
     </form>
 
+    <div style="min-height: 20px;"></div>
 
+    <div class="container-fluid">
+      <div id="chart"></div>
+      <div id="dataTable"></div>
+    </div>
 
-    <div id='chart'></div>
+  
       
       {% if data %}
       <div style="min-height: 20px;"></div>
@@ -70,7 +85,7 @@
                   <td>{{d.Module}}</td>
                   <td>{{d.Module_Description}}</td>
                   <td>{{d.conteo}}</td>
-                  <td><a href="/moduleDetails/{{d.Module}}/{{d.Dia}}">Ver detalle</a></td>
+                  <td><a href="/moduleDetails/{{d.Module}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
                 </tr>
                 {% endfor %}
                   

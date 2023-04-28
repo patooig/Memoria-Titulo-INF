@@ -55,15 +55,41 @@ def home():
     return render_template('home.html')
 
 #Ver detalle de un modulo en un dia 
-@app.route('/moduleDetails/<module>/<date>',methods=['GET'])
-def detalleModulo(module,date):
+@app.route('/moduleDetails/<module>/<date_ini>/<date_fin>',methods=['GET'])
+def detalleModulo(module,date_ini,date_fin):
     cursor = connection.cursor()
-    fecha_inicial = date + " 00:00:00"
-    fecha_final   = date + " 23:59:59"
-    cursor.execute("SELECT * FROM dbo.Journal as j WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? ORDER BY j.Date_Time ASC",(fecha_inicial,fecha_final,module))
+    fecha_inicial = date_ini 
+    fecha_final   = date_fin 
+    cursor.execute("SELECT j.Date_Time, j.Module_Description, j.Desc2 FROM dbo.Journal as j WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? ORDER BY j.Date_Time ASC",(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
+    
     cursor.close()
-    return render_template('moduleDetails.html',rows=rows,mod = module, date = date)
+    #Graficar tomando como x la fecha y como y la cantidad de cambios
+    df = pd.DataFrame()
+    df['Fecha'] = [r[0] for r in rows]
+    df['Valor'] = [r[2] for r in rows]
+
+    #Necesito solo los valores numericos
+    for i in range(len(df['Valor'])):
+
+        aux = str(df['Valor'][i])
+        aux = aux.replace('NEW VALUE = ','').replace('OLD VALUE = ','')
+        aux = aux.split(',')
+        #Si no tiene un numero, saltar
+        if len(aux) == 1 and aux[0].isnumeric() == True:
+            continue
+        num = int(aux[0])
+        df['Valor'][i] = num
+    
+    fig = px.line(df,x='Fecha', y='Valor', title='Detalle de modulo')
+    fig.update_layout(
+        autosize=False,
+        width=700,
+        height=700,
+        )
+    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return render_template('moduleDetails.html',rows=rows,mod = module, date_ini = date_ini, date_fin = date_fin, graphJSON=graphJSON)
     
 
 
@@ -161,6 +187,8 @@ def frecuentesChangeArea():
 
        #Consulta a la base de datos
         cursor = connection.cursor()
+        
+        #Selección de los 10 modulos mas frecuentes
         cursor.execute("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
         data = cursor.fetchall()   
         cursor.close()
@@ -173,7 +201,7 @@ def frecuentesChangeArea():
         df['Cambios'] = [d[2] for d in data]
 
         #Grafico con plotly
-        fig = px.bar(df, x="Modulo", y="Cambios", color="Modulo", title="Frecuencia de modulos")
+        fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Frecuencia de modulos")
         fig.update_layout(
             autosize=False,
             width=700,
@@ -182,9 +210,11 @@ def frecuentesChangeArea():
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
+
+
        
 
-        return render_template('frecuentesChangeArea.html',areas=global_areas,data=data,graphJSON=graphJSON)
+        return render_template('frecuentesChangeArea.html',areas=global_areas,data=data,graphJSON=graphJSON, area=area, fecha_ini=fecha_inicial, fecha_fin=fecha_final)
     else:
         return render_template('frecuentesChangeArea.html',areas=global_areas)
     

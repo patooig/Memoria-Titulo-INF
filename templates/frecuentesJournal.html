@@ -15,9 +15,20 @@
 
 </head>
 
+<style>
+  #chart{
+    float: left;
+    width: 50%;
+  }
+  #tabla1 {
+    float: left;
+    width: 50%;
+
+  }
+</style>
+
 <body>
 
- 
     <a class= "btn btn-secondary" href="/">Atrás</a>
     <H2>Modulos más frecuentes para todos los eventos</H2>
     <h4>Tipos includos: 'CHANGE', 'ALARM', 'EVENT'</h4>
@@ -49,16 +60,14 @@
     </form>
 
     <div class="container-fluid">
-      <!-- Div para el gráfico -->
-      <!-- Div para la tabla -->
-      <!-- Div para la tabla -->
-      <div id="tabla1"></div>
-      <div id="space"></div>
+      <div id="chart" style="float: left;"></div>
+      <div id="tabla"></div>
+  
     </div>
 
    {% if data %}
-   <div class="table-responsive">
-    <table id="tabla1" style="width: 60%;" class="table table-bordered">
+   <div class="table-responsive" id="tabla">
+    <table id="tabla1"  class="table table-bordered">
         <thead>
           <tr>
             <td style="font-weight:bold">Día</td>
@@ -83,6 +92,4 @@
     </div>
     {% endif %}
 
-
-      
 </body>

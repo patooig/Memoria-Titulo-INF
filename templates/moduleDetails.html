@@ -12,6 +12,8 @@
     <h2>Detalles del módulo {{mod}}</h2>
     <h3>Fecha: {{date}}</h3>
     
+    <div id="chart"></div>  
+    
     <table style="border-spacing: 10px;">
         <thead>
             <td style="font-weight:bold">Fecha</td>
@@ -30,4 +32,11 @@
         
     </table>
 </body>
+
+<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
+<script type='text/javascript'>
+  var graphs = {{ graphJSON | safe }};
+  Plotly.plot('chart',graphs,{});
+</script>
+
 </html>
