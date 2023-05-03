@@ -55,14 +55,22 @@
 
     <div style="min-height: 20px;"></div>
 
-    <div class="container-fluid">
-      <div id="chart"></div>
-      <div id="dataTable"></div>
-    </div>
+    
 
   
       
       {% if data %}
+
+      <div class="container-fluid">
+        <p>Area : {{area}}</p>
+        <p>Fecha inicial : {{fecha_ini}}</p>
+        <p>Fecha final : {{fecha_fin}}</p>
+        <div id="chart"></div>
+        <div id="dataTable"></div>
+      </div>
+
+      
+
       <div style="min-height: 20px;"></div>
 
       <div class="container">

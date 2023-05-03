@@ -6,26 +6,44 @@
     <title>Detalles del modulo</title>
 </head>
 
+<style>
+    #chart {
+      float: left;
+      width: 50%;
+    }
+   
+    #table1 {
+      float: left;
+      width: 50%;
+  
+    }
+  </style>
 
 <body>
     <a href="javascript:history.back()" > Atrás</a>
     <h2>Detalles del módulo {{mod}}</h2>
-    <h3>Fecha: {{date}}</h3>
+    <h3>Fecha: {{date_ini}} hasta {{date_fin}}</h3>
+
+    <div class="container-fluid">
+        <div id="chart"></div> 
+        <div id="table1"></div>
+    </div>
+
+
+     
     
-    <div id="chart"></div>  
-    
-    <table style="border-spacing: 10px;">
+    <table style="border-spacing: 10px;" id="table1">
         <thead>
-            <td style="font-weight:bold">Fecha</td>
-            <td style="font-weight:bold">Module description</td>
-            <td style="font-weight:bold">Desc2</td>
+            <td style="font-weight:bold">Atributo</td>
+            <td style="font-weight:bold">Usuario</td>
+            <td style="font-weight:bold">Cambios</td>
         </thead>
     <tbody>
         {% for r in rows %}
         <tr>
-            <td>{{r.Date_Time}}</td>
-            <td>{{r.Module_Description}}</td>
-            <td>{{r.Desc2}}</td>
+            <td>{{r.Attribute}}</td>
+            <td>{{r.Desc1}}</td>
+            <td>{{r.count}}</td>
         </tr>
         {% endfor %}
     </tbody>

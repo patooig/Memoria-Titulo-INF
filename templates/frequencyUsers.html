@@ -60,20 +60,23 @@
         <h3>Usuarios que más cambios han realizado</h3>
         <h5>En el área de {{area}}</h5>
         <h5>En el periodo de {{fecha_ini}} a {{fecha_fin}}</h5>
-    {% endif %}
 
-     <!-- Contenedor principal -->
-	<div class="container-fluid">
-		<!-- Div para el gráfico -->
-		<div id="chart"></div>
-		<!-- Div para la tabla -->
-    <div id="space"></div>
-        <!-- Div para la tabla -->
-		<div id="dataTable"></div>
-    <div id="space"></div>
-	</div>
-    
-    {% if datos %}
+        <!-- Contenedor principal -->
+    <div class="container-fluid">
+      <!-- Div para el gráfico -->
+      <div id="chart"></div>
+      <!-- Div para la tabla -->
+      <div id="space"></div>
+          <!-- Div para la tabla -->
+      <div id="dataTable"></div>
+      <div id="space"></div>
+    </div>
+  
+    <div class="container">
+      <h4>Resultados de la búsqueda</h4>
+      <div class="row">
+        <div class="col">
+
     <table class="table table-bordered" id="dataTable">
         <thead>
             <tr>
@@ -91,6 +94,9 @@
             
         </tbody>
     </table>
+  </div>
+</div>
+</div>
     {% endif %}
 
    

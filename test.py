@@ -5,16 +5,13 @@ import plotly_express as px
 import pandas as pd
 import json
 
-
 server = 'D6SMTCV2'
-
 database= 'DB004'
-
 username = 'favalos'
 password = 'favalos'
 connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
-
+'''connection = conexionDB()'''
 
 app = Flask(__name__)
 
@@ -60,38 +57,103 @@ def detalleModulo(module,date_ini,date_fin):
     cursor = connection.cursor()
     fecha_inicial = date_ini 
     fecha_final   = date_fin 
-    cursor.execute("SELECT j.Date_Time, j.Module_Description, j.Desc2 FROM dbo.Journal as j WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? ORDER BY j.Date_Time ASC",(fecha_inicial,fecha_final,module))
+
+    SQL = ( "SELECT j.Attribute,j.Desc1,COUNT(j.Attribute) as count "
+            "FROM dbo.Journal as j "
+            "WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? "
+            "GROUP BY j.Attribute, j.Desc1 "
+            "ORDER BY count DESC")
+    
+    cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
-    
-    cursor.close()
-    #Graficar tomando como x la fecha y como y la cantidad de cambios
+
+    #Agrupar por Attribute
     df = pd.DataFrame()
-    df['Fecha'] = [r[0] for r in rows]
-    df['Valor'] = [r[2] for r in rows]
+    df['Attribute'] = [r[0] for r in rows]
+    df['Desc1'] = [r[1] for r in rows]
+    df['count'] = [r[2] for r in rows]
 
-    #Necesito solo los valores numericos
-    for i in range(len(df['Valor'])):
-
-        aux = str(df['Valor'][i])
-        aux = aux.replace('NEW VALUE = ','').replace('OLD VALUE = ','')
-        aux = aux.split(',')
-        #Si no tiene un numero, saltar
-        if len(aux) == 1 and aux[0].isnumeric() == True:
-            continue
-        num = int(aux[0])
-        df['Valor'][i] = num
     
-    fig = px.line(df,x='Fecha', y='Valor', title='Detalle de modulo')
-    fig.update_layout(
+
+
+    cursor.close()
+    return render_template('moduleDetails.html',rows=rows,mod = module, date_ini = date_ini, date_fin = date_fin)
+    
+@app.route('/dashboard',methods=['GET','POST'])
+def dashboard():
+    if request.method == 'POST':
+        #Obtener datos del formulario
+        area          = request.form["areas"]
+        fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
+        fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
+
+        #Obtener datos de la base de datos
+        cursor = connection.cursor()
+        cursor.execute("SELECT J.Date_Time, j.Module, j.Module_Description, j.Desc1, j.Desc2 FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? ", area,fecha_inicial,fecha_final)
+        datos = cursor.fetchall()
+        cursor.close()
+        
+        df = preprocesadoDashboard(datos)
+
+        def users():
+            cursor = connection.cursor()
+            cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
+            datos = cursor.fetchall()
+            cursor.close()
+
+            #Diccionario para luego poder graficar con plotly
+            diccionario = dict()
+            for d in datos:
+                diccionario[d[0]] = d[1]
+            
+            #Grafico con plotly
+            fig = px.pie(values=diccionario.values(), names=diccionario.keys(), title='Frecuencia de usuarios')
+            fig.update_traces(textposition='inside', textinfo='percent+label')
+            fig.update_layout(
+                autosize=False,
+                width=500,
+                height=500,
+                )
+            graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+            return graphJSON
+        
+        def modules():
+            cursor = connection.cursor()
+            
+            #Selección de los 10 modulos mas frecuentes
+            cursor.execute("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+            data = cursor.fetchall()   
+            cursor.close()
+
+        
+            #Creamos dataframe 
+            df = pd.DataFrame()
+            df['Modulo'] = [d[0] for d in data]
+            df['Descripcion'] = [d[1] for d in data]
+            df['Cambios'] = [d[2] for d in data]
+
+            #Grafico con plotly
+            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Frecuencia de modulos")
+            fig.update_layout(
+                autosize=False,
+                width=500,
+                height=500,
+                )
+            graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+            return graphJSON
+
+        
+        #Grafica de barras
+        fig = px.bar(df, x="module", y="count", color="desc1", title="Modulos con mas cambios", labels={"module":"Modulo","count":"Numero de cambios","desc1":"Usuario"})
+        fig.update_layout(
         autosize=False,
         width=700,
         height=700,
         )
-    graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-
-    return render_template('moduleDetails.html',rows=rows,mod = module, date_ini = date_ini, date_fin = date_fin, graphJSON=graphJSON)
-    
-
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+        return render_template('dashboard.html',areas=global_areas,graphJSON=users(),graphJSON2=modules(),graphJSON3=graphJSON)
+    else:
+        return render_template('dashboard.html',areas=global_areas)
 
 @app.route('/frequencyUsers',methods=['GET','POST'])
 def frequencyUsers():
@@ -163,6 +225,46 @@ def getDictOfAreas():
 
     return diccionarioArea, diccionarioModulo
 
+def preprocesadoDashboard(datos):
+
+    #DATOS GENERALES
+    df_general = pd.DataFrame()
+    
+    data = []
+    module = []
+    module_description = []
+    desc1 = []
+    desc2 = []
+
+    for d in datos:
+        data.append(d[0])
+        module.append(d[1])
+        module_description.append(d[2])
+        desc1.append(d[3])
+        desc2.append(d[4])
+    
+    df_general['date'] = data
+    df_general['module'] = module
+    df_general['module_description'] = module_description
+    df_general['desc1'] = desc1
+    df_general['desc2'] = desc2
+
+    #Agrupar por modulo
+    freqModules = df_general.groupby(['module']).size()
+    freqModules = freqModules.sort_values(ascending=False)
+    #Obtener los 10 modulos con mas cambios
+    freqModules = freqModules.index[:10]                        
+    
+
+    #Filtrar por los 10 modulos con mas cambios en un nuevo dataframe
+    df2 = df_general[df_general['module'].isin(freqModules)]
+    df2 = df2.groupby(['module','desc1']).size()
+    #Crea un dataframe con los 10 modulos con mas cambios
+    df2 = df2.to_frame()
+    df2 = df2.reset_index()
+    df2.columns = ['module','desc1','count']
+
+    return df2
 #Lista de las áreas de la planta
 def getListOfAreas():
     Areas = []
