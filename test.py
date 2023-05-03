@@ -67,17 +67,28 @@ def detalleModulo(module,date_ini,date_fin):
     cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
 
-    #Agrupar por Attribute
     df = pd.DataFrame()
-    df['Attribute'] = [r[0] for r in rows]
-    df['Desc1'] = [r[1] for r in rows]
-    df['count'] = [r[2] for r in rows]
 
-    
+    df['Attribute'] = [r[0] for r in rows]
+    df['Desc1']     = [r[1] for r in rows]
+    df['count']     = [r[2] for r in rows]
+
+    #Set name of columns
+    df.columns = ['Attribute','Desc1','count']
+
+    #Find the uniques
+    uniques_attributes = df['Attribute'].unique()
+
+    list_df = []
+
+    for attr in uniques_attributes:
+        df_aux = df[df['Attribute'].str.contains(attr)]
+        list_df.append(df_aux)
+
 
 
     cursor.close()
-    return render_template('moduleDetails.html',rows=rows,mod = module, date_ini = date_ini, date_fin = date_fin)
+    return render_template('moduleDetails.html',rows=list_df,mod = module, date_ini = date_ini, date_fin = date_fin)
     
 @app.route('/dashboard',methods=['GET','POST'])
 def dashboard():
