@@ -11,10 +11,7 @@ username = 'favalos'
 password = 'favalos'
 connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}')
 
-'''connection = conexionDB()'''
-
 app = Flask(__name__)
-
 
 
 @app.route('/moduleSearch',methods=['GET','POST'])
@@ -38,7 +35,6 @@ def moduleSearch():
             num = int(aux[1])
             cambios+=num
             
-        
         numdatos=cambios
 
         return render_template('moduleSearch.html',rows=rows,numdatos=numdatos,areas=global_areas)
@@ -62,10 +58,12 @@ def detalleModulo(module,date_ini,date_fin):
             "FROM dbo.Journal as j "
             "WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? "
             "GROUP BY j.Attribute, j.Desc1 "
-            "ORDER BY count DESC")
+            "ORDER BY count DESC"
+            )
     
     cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
+    cursor.close()
 
     df = pd.DataFrame()
 
@@ -79,17 +77,22 @@ def detalleModulo(module,date_ini,date_fin):
     #Find the uniques
     uniques_attributes = df['Attribute'].unique()
 
-    list_df = []
-
-    for attr in uniques_attributes:
-        df_aux = df[df['Attribute'].str.contains(attr)]
-        list_df.append(df_aux)
-
-
-
-    cursor.close()
-    return render_template('moduleDetails.html',rows=list_df,mod = module, date_ini = date_ini, date_fin = date_fin)
+    #Create a dict with the uniques attributes and the value is the sum of the count
+    dict_uniques = dict()
+    for u in uniques_attributes:
+        dict_uniques[u] = df[df['Attribute'] == u]['count'].sum()   
     
+    len_dict = len(dict_uniques)
+
+    return render_template('moduleDetails.html',
+                           dictt = dict_uniques,
+                           uniques_attributes=uniques_attributes,
+                           len_dict=len_dict,
+                           mod = module,
+                           date_ini = date_ini,
+                           date_fin = date_fin)
+    
+
 @app.route('/dashboard',methods=['GET','POST'])
 def dashboard():
     if request.method == 'POST':
@@ -302,11 +305,18 @@ def frecuentesChangeArea():
         cursor = connection.cursor()
         
         #Selección de los 10 modulos mas frecuentes
-        cursor.execute("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+        SQL = (
+            "SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
+            "FROM dbo.ChangeUser as j "
+            "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+            "GROUP BY j.Module, j.Module_Description "
+            "ORDER BY conteo DESC"
+            )
+        
+        cursor.execute(SQL, area,fecha_inicial,fecha_final)
         data = cursor.fetchall()   
         cursor.close()
 
-       
         #Creamos dataframe 
         df = pd.DataFrame()
         df['Modulo'] = [d[0] for d in data]
@@ -322,14 +332,16 @@ def frecuentesChangeArea():
             )
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
-
-
-
-       
-
-        return render_template('frecuentesChangeArea.html',areas=global_areas,data=data,graphJSON=graphJSON, area=area, fecha_ini=fecha_inicial, fecha_fin=fecha_final)
+        return render_template('frecuentesChangeArea.html',
+                               areas=global_areas,
+                               data=data,
+                               graphJSON=graphJSON,
+                               area=area, 
+                               fecha_ini=fecha_inicial, 
+                               fecha_fin=fecha_final)
     else:
-        return render_template('frecuentesChangeArea.html',areas=global_areas)
+        return render_template('frecuentesChangeArea.html',
+                               areas=global_areas)
     
 
 @app.route('/frecuentesJournal',methods=['GET','POST'])
@@ -341,14 +353,45 @@ def frecuentesJournal():
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
         cursor = connection.cursor()  
-        cursor.execute("SELECT CONVERT(date,j.Date_Time) as Dia, j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.Journal as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY CONVERT(date,j.Date_Time),j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+
+        SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
+                "FROM dbo.Journal as j "
+                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                "GROUP BY j.Module, j.Module_Description "
+                "ORDER BY conteo DESC ")
+        
+
+        cursor.execute(  SQL, area,fecha_inicial,fecha_final)
 
         data = cursor.fetchall()   
         cursor.close()           
 
-        return render_template('frecuentesJournal.html',areas=global_areas,data=data)
+        #Creamos dataframe 
+        df = pd.DataFrame()
+        df['Modulo'] = [d[0] for d in data]
+        df['Descripcion'] = [d[1] for d in data]
+        df['Cambios'] = [d[2] for d in data]
+
+        #Grafico con plotly
+        fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Frecuencia de modulos")
+        fig.update_layout(
+            autosize=False,
+            width=700,
+            height=700,
+            )
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+        return render_template('frecuentesJournal.html',
+                               areas=global_areas,
+                               data=data,
+                               graphJSON=graphJSON,
+                               area=area,
+                               fecha_ini=fecha_inicial,
+                               fecha_fin=fecha_final
+                               )
     else:
-        return render_template('frecuentesJournal.html', areas=global_areas)
+        return render_template('frecuentesJournal.html', 
+                               areas=global_areas)
 
 
 global_areas = getListOfAreas() #Variable global con las areas de la planta

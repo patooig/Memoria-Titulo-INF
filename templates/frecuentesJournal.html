@@ -10,9 +10,8 @@
     <title>Busqueda</title>
     <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css"
-     integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+   
 </head>
 
 <style>
@@ -29,67 +28,108 @@
 
 <body>
 
-    <a class= "btn btn-secondary" href="/">Atrás</a>
-    <H2>Modulos más frecuentes para todos los eventos</H2>
-    <h4>Tipos includos: 'CHANGE', 'ALARM', 'EVENT'</h4>
+  <div class="container-fluid">
+    <div class="row">
 
-    <form class="form-inline" method="POST" id="formm">
+      <main role="main" class="col-md-12 ml-sm-auto">
 
-      <div class="form-group">
+        <a class= "btn btn-secondary" href="/">Atrás</a>
+        <H2>Modulos más frecuentes para todos los eventos</H2>
+        <h4>Tipos includos: 'CHANGE', 'ALARM', 'EVENT'</h4>
 
-        <label for="opciones">Selecciona un área:</label>
+        <div style="min-height: 20px;"></div>
 
-        <select class="form-control" name="opciones" id="opciones" required>
-          <option value="" >Seleccione una opción</option>
-            {% for op in areas %}
-            <option value="{{op}}">{{ op }}</option>
-            {% endfor %}
-        </select>
-      </div>
+        <form class="form-inline" method="POST" id="formm">
+   
+
+          <div class="form-group">
+    
+            <label for="opciones">Selecciona un área:</label>
+    
+            <select class="form-control" name="opciones" id="opciones" required>
+              <option value="" >Seleccione una opción</option>
+                {% for op in areas %}
+                <option value="{{op}}">{{ op }}</option>
+                {% endfor %}
+            </select>
+          </div>
+            
+             
+            <label for="entry-date-ini">Fecha inicial</label>
+            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+          
+            <label for="entry-date-fin">Fecha final</label>
+            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+          
+            <button type="submit" class="btn btn-primary"> Enviar</button>
+    
         
-         
-        <label for="entry-date-ini">Fecha inicial</label>
-        <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
-      
-        <label for="entry-date-fin">Fecha final</label>
-        <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
-      
-        <button type="submit" class="btn btn-primary"> Enviar</button>
-      
-        
-    </form>
+          
+            
+        </form>
+    
 
-    <div class="container-fluid">
-      <div id="chart" style="float: left;"></div>
-      <div id="tabla"></div>
-  
+
+      </main>
+
     </div>
 
-   {% if data %}
-   <div class="table-responsive" id="tabla">
-    <table id="tabla1"  class="table table-bordered">
-        <thead>
-          <tr>
-            <td style="font-weight:bold">Día</td>
-            <td style="font-weight:bold">Módulo</td>
-            <td style="font-weight:bold">Descripcion del Módulo</td>
-            <td style="font-weight:bold">Número de cambios</td>
-            <td style="font-weight:bold">Detalle</td>
+
+
+
+  </div>
+
+    
+
+    
+    <div style="min-height: 20px;"></div>
+
+    {% if data %}
+    <div class="container-fluid">
+        <p>Area : {{area}}</p>
+        <p>Fecha inicial : {{fecha_ini}}</p>
+        <p>Fecha final : {{fecha_fin}}</p>
+      <div id="chart" style="float: left;"></div>
+      <div id="tabla"></div>
+    </div>
+
+    <div style="min-height: 20px;"></div>
+
+    <div class="container">
+        <h4>Resultados de la búsqueda</h4>
+        <div class="row">
+          <div class="col">
+            <table id="tabla1"  class="table table-bordered">
+            <thead>
+            <tr>
+              <td style="font-weight:bold">Módulo</td>
+              <td style="font-weight:bold">Descripcion del Módulo</td>
+              <td style="font-weight:bold">Número de eventos</td>
+              <td style="font-weight:bold">Detalle</td>
           </tr>
         </thead>
+
         <tbody>
           {% for d in data %}
           <tr>
-            <td>{{d.Dia}}</td>
             <td>{{d.Module}}</td>
             <td>{{d.Module_Description}}</td>
             <td>{{d.conteo}}</td>
-            <td><a href="/moduleDetails/{{d.Module}}/{{d.Dia}}">Ver detalle</a></td>
+            <td><a href="/moduleDetails/{{d.Module}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
+          </div>
+        </div>
     </div>
     {% endif %}
 
 </body>
+
+
+<script type='text/javascript'>
+  var graphs = {{ graphJSON | safe }};
+  Plotly.plot('chart',graphs,{});
+</script>
+
