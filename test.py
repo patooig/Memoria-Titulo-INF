@@ -155,7 +155,7 @@ def dashboard():
             df['Cambios'] = [d[2] for d in data]
 
             #Grafico con plotly
-            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Módulos CHANGE")
+            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Top 10 módulos change")
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -168,7 +168,7 @@ def dashboard():
             cursor = connection.cursor()
             SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
                 "FROM dbo.Journal as j "
-                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Attribute not like 'Change' "
                 "GROUP BY j.Module, j.Module_Description "
                 "ORDER BY conteo DESC ")
             
@@ -183,7 +183,7 @@ def dashboard():
             df['Cambios'] = [d[2] for d in data]
 
             #Grafico con plotly
-            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Todos los eventos de los módulos", pattern_shape="Modulo") 
+            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Top 10 módulos alarm-event", pattern_shape="Modulo",labels=dict(x="Modulo", y="Cantidad", color="Modulo")) 
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -416,7 +416,7 @@ def frecuentesJournal():
 
         SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
                 "FROM dbo.Journal as j "
-                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Attribute not like 'Change' "
                 "GROUP BY j.Module, j.Module_Description "
                 "ORDER BY conteo DESC ")
         
