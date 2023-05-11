@@ -24,6 +24,13 @@
     width: 50%;
 
   }
+  #descr{
+    
+    text-align: center;
+    margin: 1px;
+    padding: 1px;
+  
+  }
 </style>
 
 <body>
@@ -44,14 +51,15 @@
 
           <div class="form-group">
     
-            <label for="opciones">Selecciona un área:</label>
+            <label for="area">Selecciona un área:</label>
     
-            <select class="form-control" name="opciones" id="opciones" required>
+            <select class="form-control" name="area" id="area" required>
               <option value="" >Seleccione una opción</option>
                 {% for op in areas %}
                 <option value="{{op}}">{{ op }}</option>
                 {% endfor %}
             </select>
+
           </div>
             
              
@@ -61,23 +69,13 @@
             <label for="entry-date-fin">Fecha final</label>
             <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
           
-            <button type="submit" class="btn btn-primary"> Enviar</button>
+            <button type="submit" class="btn btn-primary"> Buscar</button>
     
-        
-          
-            
         </form>
     
-
-
       </main>
 
     </div>
-
-
-
-
-  </div>
 
     
 
@@ -85,11 +83,12 @@
     <div style="min-height: 20px;"></div>
 
     {% if data %}
-    <div class="container-fluid">
+
+    <div class="container-fluid" id="descr">
         <p>Area : {{area}}</p>
         <p>Fecha inicial : {{fecha_ini}}</p>
         <p>Fecha final : {{fecha_fin}}</p>
-      <div id="chart" style="float: left;"></div>
+      <div id="chart"></div>
       <div id="tabla"></div>
     </div>
 
@@ -97,33 +96,36 @@
 
     <div class="container">
         <h4>Resultados de la búsqueda</h4>
-        <div class="row">
-          <div class="col">
-            <table id="tabla1"  class="table table-bordered">
-            <thead>
-            <tr>
-              <td style="font-weight:bold">Módulo</td>
-              <td style="font-weight:bold">Descripcion del Módulo</td>
-              <td style="font-weight:bold">Número de eventos</td>
-              <td style="font-weight:bold">Detalle</td>
-          </tr>
-        </thead>
+        
+          <div class="row">
+                  <table id="tabla1"  class="table table-bordered">
+                  <thead>
+                  <tr>
+                    <td style="font-weight:bold">Módulo</td>
+                    <td style="font-weight:bold">Descripcion del Módulo</td>
+                    <td style="font-weight:bold">Número de eventos</td>
+                    <td style="font-weight:bold">Detalle</td>
+                </tr>
+              </thead>
 
-        <tbody>
-          {% for d in data %}
-          <tr>
-            <td>{{d.Module}}</td>
-            <td>{{d.Module_Description}}</td>
-            <td>{{d.conteo}}</td>
-            <td><a href="/moduleDetails/{{d.Module}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+              <tbody>
+                {% for d in data %}
+                <tr>
+                  <td>{{d.Module}}</td>
+                  <td>{{d.Module_Description}}</td>
+                  <td>{{d.conteo}}</td>
+                  <td><a href="/moduleDetails/{{d.Module}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
           </div>
+
         </div>
+
     </div>
     {% endif %}
+  </div>
 
 </body>
 

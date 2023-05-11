@@ -11,33 +11,55 @@
 
 <body>
 
+  <div class="container-fluid">
+
     <form class="form-inline" method="POST" id="formUser">
 
-        <div class="form-group">
-            <label for="opciones">Selecciona un área:</label>
-            <select class="form-control" name="areas" id="areas" required>
-            <option value="" >Seleccione una opción</option>
-                {% for op in areas %}
-                <option value="{{op}}">{{ op }}</option>
-                {% endfor %}
-            </select>
-        
-    
-          <label  for="entry-date-ini">Fecha inicial </label>
-          <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
-    
-          <label for="entry-date-fin">Fecha final </label>
-          <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
-        </div>
-    
-          <button type="submit" class="btn btn-primary"> Enviar</button>
-            
-        </form>
+      <div class="form-group">
+          <label for="opciones">Selecciona un área:</label>
+          <select class="form-control" name="areas" id="areas" required>
+          <option value="" >Seleccione una opción</option>
+              {% for op in areas %}
+              <option value="{{op}}">{{ op }}</option>
+              {% endfor %}
+          </select>
+      
+  
+        <label  for="entry-date-ini">Fecha inicial </label>
+        <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+  
+        <label for="entry-date-fin">Fecha final </label>
+        <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+      </div>
+  
+        <button type="submit" class="btn btn-primary"> Enviar</button>
+          
+      </form>
 
-    <div class="container-fluid">
-    
-      <div id="chart3"></div>
-    </div>
+      <div style="min-height: 20px;"></div>
+
+      
+      <div class="row">
+          <div class="col-md-6">
+              <div id="chart1"></div>
+          </div>
+          <div class="col-md-6">
+              <div id="chart2"></div>  
+          </div>         
+      </div>
+
+      <div class="row">
+        <div class="col-md-6">
+          <div id="chart3"></div>
+        </div>
+        <div class="col-md-6">
+          <div id="chart4"></div>
+        </div>
+      </div>
+  
+
+  </div>
+
     
     
 </body>
@@ -56,6 +78,11 @@
 <script type='text/javascript'>
   var graphs = {{ graphJSON3 | safe }};
   Plotly.plot('chart3',graphs,{});
+</script>
+
+<script type='text/javascript'>
+  var graphs = {{ graphJSON4 | safe }};
+  Plotly.plot('chart4',graphs,{});
 </script>
 
 </html>

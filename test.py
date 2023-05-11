@@ -101,17 +101,18 @@ def dashboard():
         fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
-        #Obtener datos de la base de datos
-        cursor = connection.cursor()
-        cursor.execute("SELECT J.Date_Time, j.Module, j.Module_Description, j.Desc1, j.Desc2 FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? ", area,fecha_inicial,fecha_final)
-        datos = cursor.fetchall()
-        cursor.close()
-        
-        df = preprocesadoDashboard(datos)
-
         def users():
             cursor = connection.cursor()
-            cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
+
+            #Selección de los usuarios mas frecuentes
+            SQL = ("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones "
+                   "FROM ChangeUser as ch "
+                   "WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? "
+                   "GROUP BY ch.Desc1 "
+                   "ORDER BY COUNT(ch.desc1) DESC"
+                )
+            
+            cursor.execute(SQL,area,fecha_inicial,fecha_final)
             datos = cursor.fetchall()
             cursor.close()
 
@@ -131,11 +132,18 @@ def dashboard():
             graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             return graphJSON
         
-        def modules():
+        def modulesChange():
             cursor = connection.cursor()
             
             #Selección de los 10 modulos mas frecuentes
-            cursor.execute("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo FROM dbo.ChangeUser as j WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? GROUP BY j.Module, j.Module_Description ORDER BY conteo DESC", area,fecha_inicial,fecha_final)
+            SQL = ("SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
+                   "FROM dbo.ChangeUser as j "
+                   "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                   "GROUP BY j.Module, j.Module_Description "
+                   "ORDER BY conteo DESC"
+
+            )
+            cursor.execute(SQL, area,fecha_inicial,fecha_final)
             data = cursor.fetchall()   
             cursor.close()
 
@@ -147,7 +155,7 @@ def dashboard():
             df['Cambios'] = [d[2] for d in data]
 
             #Grafico con plotly
-            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Frecuencia de modulos")
+            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Módulos CHANGE")
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -156,16 +164,68 @@ def dashboard():
             graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             return graphJSON
 
+        def modulesTodos():
+            cursor = connection.cursor()
+            SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
+                "FROM dbo.Journal as j "
+                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                "GROUP BY j.Module, j.Module_Description "
+                "ORDER BY conteo DESC ")
+            
+            cursor.execute(SQL, area,fecha_inicial,fecha_final)
+            data = cursor.fetchall()
+            cursor.close()
+
+                #Creamos dataframe 
+            df = pd.DataFrame()
+            df['Modulo'] = [d[0] for d in data]
+            df['Descripcion'] = [d[1] for d in data]
+            df['Cambios'] = [d[2] for d in data]
+
+            #Grafico con plotly
+            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Todos los eventos de los módulos", pattern_shape="Modulo") 
+            fig.update_layout(
+                autosize=False,
+                width=500,
+                height=500,
+                )
+            graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+            return graphJSON
         
-        #Grafica de barras
-        fig = px.bar(df, x="module", y="count", color="desc1", title="Modulos con mas cambios", labels={"module":"Modulo","count":"Numero de cambios","desc1":"Usuario"})
-        fig.update_layout(
-        autosize=False,
-        width=700,
-        height=700,
-        )
-        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-        return render_template('dashboard.html',areas=global_areas,graphJSON=users(),graphJSON2=modules(),graphJSON3=graphJSON)
+        def lineaTemporalChange():
+            cursor = connection.cursor()
+            SQL = ("SELECT CONVERT(	date, j.date_time) as Fecha , COUNT(j.Ord) as Cambios "
+                   "FROM dbo.ChangeUser as j "
+                   "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
+                   "GROUP BY CONVERT(date, j.date_time) "
+                   "ORDER BY Fecha ")
+            
+            cursor.execute(SQL, area,fecha_inicial,fecha_final)
+            data = cursor.fetchall()
+            cursor.close()
+
+            #Creamos dataframe 
+            df = pd.DataFrame()
+            df['Fecha'] = [d[0] for d in data]
+            df['Cambios'] = [d[1] for d in data]
+
+            #Grafico con plotly
+            fig = px.line(df, x='Fecha', y="Cambios", title="Cambios CHANGE por día")
+            fig.update_layout(
+                autosize=False,
+                width=500,
+                height=500,
+                )
+            graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+            return graphJSON
+        
+        return render_template('dashboard.html',
+                               areas=global_areas,
+                               graphJSON=modulesChange(),
+                               graphJSON2=lineaTemporalChange(),
+                               graphJSON3=users(),
+                               graphJSON4=modulesTodos())
     else:
         return render_template('dashboard.html',areas=global_areas)
 
@@ -348,7 +408,7 @@ def frecuentesChangeArea():
 def frecuentesJournal():
 
     if request.method == 'POST':
-        area          = request.form["opciones"]
+        area          = request.form["area"]
         fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
