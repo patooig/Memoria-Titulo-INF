@@ -24,30 +24,60 @@
   </style>
 
 <body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container"> 
+  
+      <div class="collapse navbar-collapse" id="navbarsExample07">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="/">Inicio </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+          </li>
+        </ul>
+        <img src="/static/img/arauco.jpg" alt="logo" height="25" width="100">
+      </div>
+    </div>
+  </nav>
+  <div class="container-fluid">
+
     <a href="javascript:history.back()" > Atrás</a>
+    <div style="min-height: 20px;"></div>
     <h2>Detalles del módulo {{mod}}</h2>
     <h3>Fecha: {{date_ini}} hasta {{date_fin}}</h3>
 
-    <div class="container-fluid">
-        <div>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Atributo</th>
-                <th>Número de eventos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for i in range(len_dict) %}
-              {% set r = uniques_attributes[i] %}
-              <tr>
-                <td> {{uniques_attributes[i]}}</td>
-                <td> {{ dictt[r] }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
+    <div style="min-height: 20px;"></div>
+    <div class="row">
+      <div class="col-md-3">
+          <div id="table1"></div>
+    </div>
+
+  </div>
+    
+
+    
+        
+        
+    <table class="table table-bordered" id="table1">
+      <thead>
+        <tr>
+          <th>Atributo</th>
+          <th>Número de eventos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in range(len_dict) %}
+        {% set r = uniques_attributes[i] %}
+        <tr>
+          <td> {{uniques_attributes[i]}}</td>
+          <td> {{ dictt[r] }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+        
     </div>
 
 

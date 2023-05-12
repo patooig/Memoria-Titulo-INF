@@ -70,7 +70,9 @@
 
         <main role="main" class="col-md-12 ml-sm-auto ">
           
+          
           <a class= "btn btn-secondary" href="/">Atrás</a>
+          <div style="min-height: 20px;"></div>
           <H2>Módulos más frecuentes por área</H2>
           <h4>Cambios de tipo 'CHANGE'</h4>
 
@@ -142,7 +144,7 @@
                     <td>{{d.Module}}</td>
                     <td>{{d.Module_Description}}</td>
                     <td>{{d.conteo}}</td>
-                    <td><a href="/moduleDetails/{{d.Module}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
+                    <td><a href="/moduleDetails/{{d.Module}}/change/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
                   </tr>
                   {% endfor %}
                     

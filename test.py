@@ -48,19 +48,25 @@ def home():
     return render_template('home.html')
 
 #Ver detalle de un modulo en un dia 
-@app.route('/moduleDetails/<module>/<date_ini>/<date_fin>',methods=['GET'])
-def detalleModulo(module,date_ini,date_fin):
+@app.route('/moduleDetails/<module>/<type>/<date_ini>/<date_fin>',methods=['GET'])
+def detalleModulo(module,type,date_ini,date_fin):
     cursor = connection.cursor()
-    fecha_inicial = date_ini 
-    fecha_final   = date_fin 
-
-    SQL = ( "SELECT j.Attribute,j.Desc1,COUNT(j.Attribute) as count "
-            "FROM dbo.Journal as j "
-            "WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? "
-            "GROUP BY j.Attribute, j.Desc1 "
-            "ORDER BY count DESC"
-            )
+    fecha_inicial = str(date_ini) 
+    fecha_final   = str(date_fin) 
     
+    
+    if type.find('change') != -1:
+        sql_extension = " AND j.Event_type like 'CHANGE' AND j.Attribute NOT LIKE 'ALARMS%' AND j.attribute NOT LIKE '%ALM'  "
+    else:
+        sql_extension = " AND j.Event_type not like 'CHANGE' "
+        
+    SQL = ( "SELECT j.Attribute,j.Desc1,COUNT(j.Attribute) as count "
+                "FROM dbo.Journal as j "
+                "WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? " + sql_extension +
+                "GROUP BY j.Attribute, j.Desc1 "
+                "ORDER BY count DESC"
+                )
+    print(SQL)
     cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
     cursor.close()
@@ -76,12 +82,14 @@ def detalleModulo(module,date_ini,date_fin):
 
     #Find the uniques
     uniques_attributes = df['Attribute'].unique()
+    
+
 
     #Create a dict with the uniques attributes and the value is the sum of the count
     dict_uniques = dict()
     for u in uniques_attributes:
         dict_uniques[u] = df[df['Attribute'] == u]['count'].sum()   
-    
+        print(df[df['Attribute'] == u]['count'].sum()   )
     len_dict = len(dict_uniques)
 
     return render_template('moduleDetails.html',
@@ -107,7 +115,7 @@ def dashboard():
             #Selección de los usuarios mas frecuentes
             SQL = ("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones "
                    "FROM ChangeUser as ch "
-                   "WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? "
+                   "WHERE ch.Area= ? AND ch.Date_time >= ? and ch.date_time <= ? "
                    "GROUP BY ch.Desc1 "
                    "ORDER BY COUNT(ch.desc1) DESC"
                 )
@@ -168,7 +176,7 @@ def dashboard():
             cursor = connection.cursor()
             SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
                 "FROM dbo.Journal as j "
-                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Attribute not like 'Change' "
+                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Event_type not like 'Change' "
                 "GROUP BY j.Module, j.Module_Description "
                 "ORDER BY conteo DESC ")
             
@@ -180,10 +188,10 @@ def dashboard():
             df = pd.DataFrame()
             df['Modulo'] = [d[0] for d in data]
             df['Descripcion'] = [d[1] for d in data]
-            df['Cambios'] = [d[2] for d in data]
+            df['Cantidad'] = [d[2] for d in data]
 
             #Grafico con plotly
-            fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Top 10 módulos alarm-event", pattern_shape="Modulo",labels=dict(x="Modulo", y="Cantidad", color="Modulo")) 
+            fig = px.bar(df, x='Modulo', y="Cantidad", color="Modulo", title="Top 10 módulos alarm-event", pattern_shape="Modulo",) 
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -207,7 +215,7 @@ def dashboard():
 
             #Creamos dataframe 
             df = pd.DataFrame()
-            df['Fecha'] = [d[0] for d in data]
+            df['Fecha']   = [d[0] for d in data]
             df['Cambios'] = [d[1] for d in data]
 
             #Grafico con plotly
@@ -274,7 +282,7 @@ def areasymodulos():
 
 def getDictOfAreas():
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM dbo.AreasYModulos")
+    cursor.execute("SELECT * FROM dbo.AreaModules")
     data = cursor.fetchall()
     
     diccionarioArea = dict() 
@@ -343,7 +351,7 @@ def preprocesadoDashboard(datos):
 def getListOfAreas():
     Areas = []
     cursor = connection.cursor()
-    cursor.execute("SELECT DISTINCT Area FROM dbo.AreasYModulos")
+    cursor.execute("SELECT DISTINCT Area FROM dbo.AreaModules")
     datos = cursor.fetchall()
     for data in datos:
         Areas.append(data[0])
@@ -414,26 +422,26 @@ def frecuentesJournal():
 
         cursor = connection.cursor()  
 
-        SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
-                "FROM dbo.Journal as j "
-                "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Attribute not like 'Change' "
-                "GROUP BY j.Module, j.Module_Description "
-                "ORDER BY conteo DESC ")
+        SQL = ( "SELECT TOP(10) j.Module, am.Module_Description, COUNT (j.Ord) as conteo "
+                    "FROM dbo.Journal as j , AreaModules as am "
+                    "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Event_Type not like 'CHANGE' and j.Module = am.Module "
+                    "GROUP BY j.Module, am.Module_Description "
+                    "ORDER BY conteo DESC ")
         
 
-        cursor.execute(  SQL, area,fecha_inicial,fecha_final)
+        cursor.execute(SQL, area,fecha_inicial,fecha_final)
 
         data = cursor.fetchall()   
         cursor.close()           
 
         #Creamos dataframe 
         df = pd.DataFrame()
-        df['Modulo'] = [d[0] for d in data]
+        df['Modulo']      = [d[0] for d in data]
         df['Descripcion'] = [d[1] for d in data]
-        df['Cambios'] = [d[2] for d in data]
+        df['Cantidad de eventos']     = [d[2] for d in data]
 
         #Grafico con plotly
-        fig = px.bar(df, x='Modulo', y="Cambios", color="Modulo", title="Frecuencia de modulos")
+        fig = px.bar(df, x='Modulo', y="Cantidad de eventos", color="Modulo", title="Frecuencia de modulos")
         fig.update_layout(
             autosize=False,
             width=700,
