@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busqueda</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+   
+</head>
+
+<style>
+  #chart{
+    float: left;
+    width: 50%;
+  }
+  #tabla1 {
+    float: left;
+    width: 50%;
+
+  }
+  #descr{
+    
+    text-align: center;
+    margin: 1px;
+    padding: 1px;
+  
+  }
+</style>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container"> 
+  
+      <div class="collapse navbar-collapse" id="navbarsExample07">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item active">
+            <a class="nav-link" href="/">Inicio </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/dashboard">Dashboard</a>
+          </li>
+        </ul>
+        <img src="/static/img/arauco.jpg" alt="logo" height="25" width="100">
+      </div>
+    </div>
+  </nav>
+  
+  <div class="container-fluid">
+    <div class="row">
+
+      <main role="main" class="col-md-12 ml-sm-auto">
+
+        <a class= "btn btn-secondary" href="/">Atrás</a>
+        <H2>Modulos más frecuentes para todos los eventos</H2>
+        <h4>Tipos includos: 'ALARM', 'EVENT'</h4>
+
+        <div style="min-height: 20px;"></div>
+
+        <form class="form-inline" method="POST" id="formm">
+   
+
+          <div class="form-group">
+    
+            <label for="area">Selecciona un área:</label>
+    
+            <select class="form-control" name="area" id="area" required>
+              <option value="" >Seleccione una opción</option>
+                {% for op in areas %}
+                <option value="{{op}}">{{ op }}</option>
+                {% endfor %}
+            </select>
+
+          </div>
+            
+             
+            <label for="entry-date-ini">Fecha inicial</label>
+            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+          
+            <label for="entry-date-fin">Fecha final</label>
+            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+          
+            <button type="submit" class="btn btn-primary"> Buscar</button>
+    
+        </form>
+    
+      </main>
+
+    </div>
+
+    
+
+    
+    <div style="min-height: 20px;"></div>
+
+
+
+    {% if datos %}
+    <div class="container-fluid" id="descr">
+        <p>Area : {{area}}</p>
+        <p>Fecha inicial : {{fecha_ini}}</p>
+        <p>Fecha final : {{fecha_fin}}</p>
+      <div id="chart"></div>
+      <div id="tabla1"></div>
+    </div>
+
+    <div style="min-height: 20px;"></div>
+
+    <div class="container">
+        <h4>Resultados de la búsqueda</h4>
+        
+          <div class="row">
+                  <table id="tabla1"  class="table table-bordered">
+                <thead>
+                  <tr>
+                    <td style="font-weight:bold">Módulo</td>
+                    <td style="font-weight:bold">Descripcion del Módulo</td>
+                    <td style="font-weight:bold">Número de eventos</td>
+                    <td style="font-weight:bold">Detalle</td>
+                  </tr>
+              </thead>
+
+              <tbody>
+                {% for _,row in data.iterrows() %}
+                <tr>
+                  <td>{{row['Module']}}</td>
+                  <td>{{row['Module_Description']}}</td>
+                  <td>{{row['Eventos']}}</td>
+                  <td> <a href="/moduleDetails2/{{row['Module']}}/{{fecha_ini}}/{{fecha_fin}}">Detalles</a></td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+    </div>
+    {% endif %}
+  </div>
+
+</body>
+
+
+<script type='text/javascript'>
+  var graphs = {{ graphJSON | safe }};
+  Plotly.plot('chart',graphs,{});
+</script>
+

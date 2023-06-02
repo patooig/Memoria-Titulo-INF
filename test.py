@@ -5,7 +5,7 @@ import plotly_express as px
 import pandas as pd
 import json
 
-server = 'D6SMTCV2'
+server = 'D6SMTCV2' #D6SMTCV2
 database= 'DB004'
 username = 'favalos'
 password = 'favalos'
@@ -13,6 +13,7 @@ connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={da
 
 app = Flask(__name__)
 
+df_general = None
 
 @app.route('/moduleSearch',methods=['GET','POST'])
 def moduleSearch():
@@ -66,7 +67,7 @@ def detalleModulo(module,type,date_ini,date_fin):
                 "GROUP BY j.Attribute, j.Desc1 "
                 "ORDER BY count DESC"
                 )
-    print(SQL)
+    
     cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
     cursor.close()
@@ -101,6 +102,30 @@ def detalleModulo(module,type,date_ini,date_fin):
                            date_fin = date_fin)
     
 
+
+
+@app.route('/moduleDetails2/<module>/<date_ini>/<date_fin>',methods=['GET'])
+def detalleModulo2(module,date_ini,date_fin):
+
+    
+    #Filtrar con el module, y el intervalo de fecha
+
+    modulo = str(module)
+    fecha_inicial = str(date_ini) 
+    fecha_final   = str(date_fin) 
+
+    new_df = df_general[df_general['Module'] == modulo]
+
+    new_df = new_df.groupby(['Module', 'Attribute']).size().reset_index(name='Count')
+
+    return render_template('moduleDetails2.html',
+                        mod = module,
+                        new_df=new_df,
+                        date_ini = fecha_inicial,
+                        date_fin = fecha_final)
+
+
+    
 @app.route('/dashboard',methods=['GET','POST'])
 def dashboard():
     if request.method == 'POST':
@@ -218,8 +243,11 @@ def dashboard():
             df['Fecha']   = [d[0] for d in data]
             df['Cambios'] = [d[1] for d in data]
 
+            valor_promedio = df['Cambios'].mean()
+
             #Grafico con plotly
-            fig = px.line(df, x='Fecha', y="Cambios", title="Cambios CHANGE por día")
+            fig = px.line(df, x='Fecha', y="Cambios", title="Eventos CHANGE")
+            fig.add_hline(y=valor_promedio, line_dash="dot", annotation_text="Promedio")
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -374,10 +402,10 @@ def frecuentesChangeArea():
         
         #Selección de los 10 modulos mas frecuentes
         SQL = (
-            "SELECT top(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
-            "FROM dbo.ChangeUser as j "
-            "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? "
-            "GROUP BY j.Module, j.Module_Description "
+            "SELECT top(10) j.Module, am.Module_Description, COUNT (j.Module) as conteo "
+            "FROM dbo.ChangeUser as j , dbo.AreaModules as am  "
+            "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? AND am.Module = j.Module  "
+            "GROUP BY j.Module, am.Module_Description "
             "ORDER BY conteo DESC"
             )
         
@@ -411,7 +439,6 @@ def frecuentesChangeArea():
         return render_template('frecuentesChangeArea.html',
                                areas=global_areas)
     
-
 @app.route('/frecuentesJournal',methods=['GET','POST'])
 def frecuentesJournal():
 
@@ -462,11 +489,71 @@ def frecuentesJournal():
                                areas=global_areas)
 
 
+
+
+@app.route('/frecuentesJournal2',methods=['GET','POST'])
+def frecuentesJournal2():
+    
+    if request.method == 'POST':
+        area          = request.form["area"]
+        fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
+        fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
+
+        SQL = ("SELECT j.Date_time,j.Module, am.Module_Description, j.Attribute , j.Desc1, j.Desc2 "
+              "FROM dbo.Journal as j , AreaModules as am "
+              "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Event_Type not like 'CHANGE' and j.Module = am.Module ")
+        
+        df = pd.DataFrame(pd.read_sql_query(sql = SQL,
+                                            con= connection ,
+                                            params= ( area,fecha_inicial,fecha_final )) 
+                                            , 
+                                            columns=['Date_time','Module','Module_Description','Attribute','Desc1','Desc2']) 
+        df['Date_time'] = pd.to_datetime(df['Date_time'])
+
+        global df_general
+        df_general = df
+
+        df_count = df.groupby('Module')['Attribute'].count().reset_index(name='Eventos')
+        df_count = df_count.sort_values('Eventos', ascending=False)
+
+        # Agregar la columna 'Module_Description'
+        df_count = df_count.merge(df[['Module', 'Module_Description']].drop_duplicates(), on='Module')
+
+        #Selección de TOP 10
+        df_count = df_count.head(10)
+
+        #Grafico con plotly
+        fig = px.bar(df_count, x='Module', y="Eventos", color="Module", title="Frecuencia de modulos")
+        fig.update_layout(
+            autosize=False,
+            width=700,
+            height=700,
+            )
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+
+        return render_template('frecuentesJournal2.html',
+                               areas=global_areas,
+                               data=df_count,
+                               datos=1,
+                               graphJSON=graphJSON,
+                               area=area,
+                               fecha_ini=fecha_inicial,
+                               fecha_fin=fecha_final
+                            )
+
+    else:
+        return render_template('frecuentesJournal2.html', 
+                               datos=0,
+                               areas=global_areas)
+    
+        
+        
+
 global_areas = getListOfAreas() #Variable global con las areas de la planta
 global_dictAreas , global_dictModule = getDictOfAreas() #Variable global con el diccionario de areas y modulos
 
 if __name__ == '__main__':
     
     #app.run(debug=True, use_debugger=False, use_reloader=False) #Use production server
-    app.run(debug=True) #Use development server
+    app.run(debug=False) #Use development server
     
