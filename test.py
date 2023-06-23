@@ -4,16 +4,99 @@ import plotly
 import plotly_express as px
 import pandas as pd
 import json
+import os 
+
+import shutil
+
+import hashlib
+
+
 
 server = 'D6SMTCV2' #D6SMTCV2
 database= 'DB004'
 username = 'favalos'
 password = 'favalos'
-connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password};')
+connection.autocommit = True
 
 app = Flask(__name__)
 
 df_general = None
+
+
+def loadFilestoServer(filename,ruta_origen):
+    
+
+    ruta_destino = r'\\D6smtcv2\data'
+
+    #Verificar si archivo ya existe en ruta destino
+    if os.path.isfile(os.path.join(ruta_destino, filename)):
+        print("El archivo ya existe en el servidor")
+        return 2
+    
+    #Integridad de del archivo
+    sha256_hash_origen = hashlib.sha256()
+
+    with open(ruta_origen, 'rb') as archivo:
+         for bloque in iter(lambda: archivo.read(4096), b''):
+             sha256_hash_origen.update(bloque)
+    archivo.close()
+    print(f"El hash SHA256 del archivo .mdf es: {sha256_hash_origen.hexdigest()}")
+
+    #Copiar archivo a servidor
+    try:
+        shutil.copy(ruta_origen, ruta_destino)
+    except PermissionError as e:
+        print(f"Error al mover el archivo: {e}")
+
+
+    print("Archivo movido a servidor")
+
+    #Ruta destino con nombre del archivo enviado
+    ruta_destino = os.path.join(ruta_destino, filename)
+
+    #Calculo de integridad del archivo en el servidor
+    sha256_hash_destino = hashlib.sha256()
+    with open(ruta_destino, 'rb') as archivo:
+         for bloque in iter(lambda: archivo.read(4096), b''):
+             sha256_hash_destino.update(bloque)
+    archivo.close()
+    
+    print(f"El hash SHA256 del archivo .mdf es: {sha256_hash_destino.hexdigest()}")
+    if sha256_hash_origen.hexdigest() == sha256_hash_destino.hexdigest():
+        print("Integridad del archivo comprobada")
+    return 1
+    
+
+
+
+@app.route('/loadFiles', methods = ['GET','POST'])
+def loadFiles():
+        if request.method == "POST":
+            file = request.files['filename'] #Capturo el archivo, PERO solo necesito el nombre
+            filename = file.filename #Nombre del archivo + extensión
+            print(filename) #Nombre del archivo + extensión
+
+            ruta_actual= os.path.dirname(os.path.abspath(__file__))
+            ruta_datos = os.path.join(ruta_actual, "datos")
+            ruta_datos = os.path.join(ruta_datos, filename)
+
+            res_load = loadFilestoServer(filename,ruta_datos)
+            
+            if res_load == 1:
+                cursor = connection.cursor()
+                route = "EXEC [dbo].[Events_Copy] @filename  = 'D:\DB\DATA\\" + filename + "'"
+                cursor.execute(route)
+
+                #Imprimir resultado de ejecucion 
+                #! RECALCULAR FECHAS DE INCIO Y FINAL DE BUSQUEDA
+                print(route)
+           
+            return render_template('loadFiles.html', res_load=res_load,filename=filename)
+        
+        else:
+        
+            return render_template('loadFiles.html')
 
 @app.route('/moduleSearch',methods=['GET','POST'])
 def moduleSearch():
@@ -23,11 +106,12 @@ def moduleSearch():
         fecha_final = request.form['entry-date-fin'] + " 23:59:59"
         print(modulo,fecha_inicial,fecha_final)
         cursor = connection.cursor()
-        cursor.execute( "SELECT CONVERT(date, j.Date_time) as Dia,COUNT (j.Module) as NumCambios FROM DB004.dbo.Journal as j WHERE j.Date_Time >= ? and j.Date_Time <= ?  and j.Module = ? GROUP BY CONVERT(date, j.Date_time) ORDER BY Dia",fecha_inicial,fecha_final,modulo)
+        cursor.execute( "SELECT CONVERT(date, j.Date_time) as Dia,COUNT (j.Module) as NumCambios FROM dbo.Journal as j WHERE j.Date_Time >= ? and j.Date_Time <= ?  and j.Module = ? GROUP BY CONVERT(date, j.Date_time) ORDER BY Dia",fecha_inicial,fecha_final,modulo)
         rows=cursor.fetchall()
         cursor.close()
 
         cambios=0
+
 
         for r in rows:
             aux = str(r)
@@ -139,7 +223,7 @@ def dashboard():
 
             #Selección de los usuarios mas frecuentes
             SQL = ("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones "
-                   "FROM ChangeUser as ch "
+                   "FROM dbo.ChangeUser as ch "
                    "WHERE ch.Area= ? AND ch.Date_time >= ? and ch.date_time <= ? "
                    "GROUP BY ch.Desc1 "
                    "ORDER BY COUNT(ch.desc1) DESC"
@@ -197,7 +281,7 @@ def dashboard():
             graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
             return graphJSON
 
-        def modulesTodos():
+        def eventosAlarmas():
             cursor = connection.cursor()
             SQL = ( "SELECT TOP(10) j.Module, j.Module_Description, COUNT (j.Module) as conteo "
                 "FROM dbo.Journal as j "
@@ -216,7 +300,7 @@ def dashboard():
             df['Cantidad'] = [d[2] for d in data]
 
             #Grafico con plotly
-            fig = px.bar(df, x='Modulo', y="Cantidad", color="Modulo", title="Top 10 módulos alarm-event", pattern_shape="Modulo",) 
+            fig = px.bar(df, x='Modulo', y="Cantidad", color="Modulo", title="Top 10 módulos alarm-event", ) 
             fig.update_layout(
                 autosize=False,
                 width=500,
@@ -250,7 +334,7 @@ def dashboard():
             fig.add_hline(y=valor_promedio, line_dash="dot", annotation_text="Promedio")
             fig.update_layout(
                 autosize=False,
-                width=500,
+                width=700,
                 height=500,
                 )
             graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
@@ -261,9 +345,14 @@ def dashboard():
                                graphJSON=modulesChange(),
                                graphJSON2=lineaTemporalChange(),
                                graphJSON3=users(),
-                               graphJSON4=modulesTodos())
+                               graphJSON4=eventosAlarmas(),
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final)
     else:
-        return render_template('dashboard.html',areas=global_areas)
+        return render_template('dashboard.html',
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final,
+                               areas=global_areas)
 
 @app.route('/frequencyUsers',methods=['GET','POST'])
 def frequencyUsers():
@@ -273,7 +362,7 @@ def frequencyUsers():
         area          = request.form['areas']
 
         cursor = connection.cursor()
-        cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
+        cursor.execute("SELECT ch.Desc1, COUNT(ch.desc1) as Apariciones FROM dbo.ChangeUser as ch WHERE ch.Area=? AND ch.Date_time >= ? and ch.date_time <= ? GROUP BY ch.Desc1 ORDER BY COUNT(ch.desc1) DESC",area,fecha_inicial,fecha_final)
         datos = cursor.fetchall()
         cursor.close()
 
@@ -293,9 +382,20 @@ def frequencyUsers():
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-        return render_template('frequencyUsers.html',areas=global_areas,datos=datos, graphJSON=graphJSON, area=area, fecha_ini=fecha_inicial, fecha_fin=fecha_final)
+        return render_template('frequencyUsers.html',
+                               areas=global_areas,
+                               datos=datos, 
+                               graphJSON=graphJSON, 
+                               area=area, 
+                               fecha_ini=fecha_inicial,
+                                fecha_fin=fecha_final,
+                                fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final)
     else:
-        return render_template('frequencyUsers.html',areas=global_areas)
+        return render_template('frequencyUsers.html',
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final,
+                               areas=global_areas)
     
 
 
@@ -310,7 +410,7 @@ def areasymodulos():
 
 def getDictOfAreas():
     cursor = connection.cursor()
-    cursor.execute("SELECT * FROM dbo.AreaModules")
+    cursor.execute("SELECT * FROM dbo.AreaModules2")
     data = cursor.fetchall()
     
     diccionarioArea = dict() 
@@ -379,7 +479,7 @@ def preprocesadoDashboard(datos):
 def getListOfAreas():
     Areas = []
     cursor = connection.cursor()
-    cursor.execute("SELECT DISTINCT Area FROM dbo.AreaModules")
+    cursor.execute("SELECT DISTINCT Area FROM dbo.AreaModules2")
     datos = cursor.fetchall()
     for data in datos:
         Areas.append(data[0])
@@ -403,7 +503,7 @@ def frecuentesChangeArea():
         #Selección de los 10 modulos mas frecuentes
         SQL = (
             "SELECT top(10) j.Module, am.Module_Description, COUNT (j.Module) as conteo "
-            "FROM dbo.ChangeUser as j , dbo.AreaModules as am  "
+            "FROM DB004.dbo.ChangeUser as j , dbo.AreaModules2 as am  "
             "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? AND am.Module = j.Module  "
             "GROUP BY j.Module, am.Module_Description "
             "ORDER BY conteo DESC"
@@ -434,9 +534,13 @@ def frecuentesChangeArea():
                                graphJSON=graphJSON,
                                area=area, 
                                fecha_ini=fecha_inicial, 
-                               fecha_fin=fecha_final)
+                               fecha_fin=fecha_final,
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final)
     else:
         return render_template('frecuentesChangeArea.html',
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final,
                                areas=global_areas)
     
 @app.route('/frecuentesJournal',methods=['GET','POST'])
@@ -450,7 +554,7 @@ def frecuentesJournal():
         cursor = connection.cursor()  
 
         SQL = ( "SELECT TOP(10) j.Module, am.Module_Description, COUNT (j.Ord) as conteo "
-                    "FROM dbo.Journal as j , AreaModules as am "
+                    "FROM dbo.Journal as j , dbo.AreaModules2 as am "
                     "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Event_Type not like 'CHANGE' and j.Module = am.Module "
                     "GROUP BY j.Module, am.Module_Description "
                     "ORDER BY conteo DESC ")
@@ -482,10 +586,14 @@ def frecuentesJournal():
                                graphJSON=graphJSON,
                                area=area,
                                fecha_ini=fecha_inicial,
-                               fecha_fin=fecha_final
+                               fecha_fin=fecha_final,
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final,
                                )
     else:
         return render_template('frecuentesJournal.html', 
+                               fecha_inicial=global_fecha_inicial,
+                               fecha_final=global_fecha_final,
                                areas=global_areas)
 
 
@@ -500,7 +608,7 @@ def frecuentesJournal2():
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
 
         SQL = ("SELECT j.Date_time,j.Module, am.Module_Description, j.Attribute , j.Desc1, j.Desc2 "
-              "FROM dbo.Journal as j , AreaModules as am "
+              "FROM dbo.Journal as j , dbo.AreaModules2 as am "
               "WHERE j.Area = ? and j.Date_Time >= ? and j.Date_Time <= ? and j.Event_Type not like 'CHANGE' and j.Module = am.Module ")
         
         df = pd.DataFrame(pd.read_sql_query(sql = SQL,
@@ -548,12 +656,39 @@ def frecuentesJournal2():
     
         
         
+def getFechaInicial():
+        
+    cursor = connection.cursor()  
+    SQL = ("SELECT MIN(Date_Time) FROM dbo.Journal")
+    cursor.execute(SQL)
+    fecha_inicial = cursor.fetchone()[0]
+    #Solo quiero los 10 primeros caracteres de la fecha
+    fecha_inicial = str(fecha_inicial)[:10]
+    print(fecha_inicial)
+    cursor.close() 
+    
+    return fecha_inicial
+
+def getFechaFinal():
+            
+    cursor = connection.cursor()  
+    SQL = ("SELECT MAX(Date_Time) FROM dbo.Journal")
+    cursor.execute(SQL)
+    fecha_final = cursor.fetchone()[0]
+    #Solo quiero los 10 primeros caracteres de la fecha
+    fecha_final = str(fecha_final)[:10]
+    print(fecha_final)
+    cursor.close() 
+    
+    return fecha_final
 
 global_areas = getListOfAreas() #Variable global con las areas de la planta
 global_dictAreas , global_dictModule = getDictOfAreas() #Variable global con el diccionario de areas y modulos
+global_fecha_inicial = getFechaInicial() #Variable global con la fecha inicial de la base de datos
+global_fecha_final = getFechaFinal() #Variable global con la fecha final de la base de datos
 
 if __name__ == '__main__':
     
     #app.run(debug=True, use_debugger=False, use_reloader=False) #Use production server
-    app.run(debug=False) #Use development server
-    
+    app.run( debug=True) #Use development server host='0.0.0.0'
+   
