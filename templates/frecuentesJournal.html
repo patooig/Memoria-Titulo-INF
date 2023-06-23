@@ -8,9 +8,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busqueda</title>
-    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
     
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= '/css/bootstrap.min.css') }}">
    
 </head>
 
@@ -81,10 +80,10 @@
             
              
             <label for="entry-date-ini">Fecha inicial</label>
-            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
           
             <label for="entry-date-fin">Fecha final</label>
-            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
           
             <button type="submit" class="btn btn-primary"> Buscar</button>
     
@@ -147,8 +146,9 @@
 </body>
 
 
-<script type='text/javascript'>
-  var graphs = {{ graphJSON | safe }};
-  Plotly.plot('chart',graphs,{});
+<script src="{{ url_for('static', filename='/js/plotly-latest.min.js') }}"></script>
+  <script type="text/javascript">
+    var graphJSON = {{ graphJSON | safe }};
+    Plotly.newPlot('chart', graphJSON.data, graphJSON.layout);
 </script>
 

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= '/css/bootstrap.min.css') }}">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carga de Archivos</title>
+
+</head>
+
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container"> 
+      
+          <div class="collapse navbar-collapse" id="navbarsExample07">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="/">Inicio </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+              </li>
+            </ul>
+            <img src="/static/img/arauco.jpg" alt="logo" height="25" width="100">
+          </div>
+        </div>
+      </nav>
+    
+      <div class="container-fluid">
+
+        <div class="row">
+
+          <div class="col-md-12">
+            <h1>Carga de archivos</h1>
+            <p style="color: grey;font-size: 12px;">Proceso de carga de archivos MDF para integrar a la base de datos</p>
+
+            <form method="POST" enctype="multipart/form-data">
+                <input type="file" id="myFile" name="filename" accept=".mdf">
+                <input type="submit" value="Cargar" class="btn btn-primary">
+            </form>
+          </div>
+
+        </div>
+
+      </div>
+
+      {% if res_load %}
+
+      {% if res_load == 1 %}
+      <div class="alert alert-success" role="alert">
+        Archivo {{ filename }} cargado correctamente
+      </div>
+      {% endif %}
+
+      {% if res_load == 2 %}
+      <div class="alert alert-danger" role="alert">
+        El archivo {{ filename }}ya existe en el destino
+      </div>
+      {% endif %}
+
+      {% endif %}
+      
+
+
+          
+             
+</body>
+</html>

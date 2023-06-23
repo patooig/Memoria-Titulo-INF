@@ -7,23 +7,12 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename= '/css/bootstrap.min.css') }}">
    
     <title>Búsqueda</title>
 
 </head>
 
-<!-- NAV BAR -->
-<!-- 
-  <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-  <a class="navbar-brand col-sm-3 col-md-2 mr-0" href="#">Company name</a>
-  <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search">
-  <ul class="navbar-nav px-3">
-    <li class="nav-item text-nowrap">
-      <a class="nav-link" href="#">Sign out</a>
-    </li>
-  </ul>
-</nav> -->
 
 <style>
   #chart{
@@ -90,10 +79,10 @@
             </select>
 
             <label for="entry-date-ini"> Fecha inicial</label>
-            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="2022-01-01" min="2019-01-01" max="2022-12-31">
+            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
           
             <label for="entry-date-fin"> Fecha final</label>
-            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="2022-01-31" min="2019-01-01" max="2022-12-31">
+            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
           
             <button type="submit" class="btn btn-primary">Buscar</button>
 
@@ -163,10 +152,19 @@
 </body>
 
 
-<script src='https://cdn.plot.ly/plotly-latest.min.js'></script>
-<script type='text/javascript'>
+
+
+<!-- 
+  <script src="{{ url_for('static', filename='/js/plotly-latest.min.js') }}"></script>
+  <script type='text/javascript'>
   var graphs = {{ graphJSON | safe }};
   Plotly.plot('chart',graphs,{});
+</script> -->
+
+<script src="{{ url_for('static', filename='/js/plotly-latest.min.js') }}"></script>
+  <script type="text/javascript">
+    var graphJSON = {{ graphJSON | safe }};
+    Plotly.newPlot('chart', graphJSON.data, graphJSON.layout);
 </script>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
