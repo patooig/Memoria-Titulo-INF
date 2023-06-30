@@ -44,78 +44,99 @@
       </div>
     </div>
   </nav>
-  
-  <a class= "btn btn-secondary" href="/">Atrás</a>
-  <h2>Usuarios que han realizado cambios</h2>
-  <h5>Eventos de tipo CHANGE</h5>
-    
 
-  <form class="form-inline" method="POST" id="formUser">
 
-    <div class="form-group">
-        <label for="opciones">Selecciona un área:</label>
-        <select class="form-control" name="areas" id="areas" required>
-        <option value="" >Seleccione una opción</option>
-            {% for op in areas %}
-            <option value="{{op}}">{{ op }}</option>
-            {% endfor %}
-        </select>
-    
+  <div class="container-fluid">
+    <div class="row">
+      <main role="main" class="col-md-12 ml-sm-auto">
 
-      <label  for="entry-date-ini">Fecha inicial </label>
-      <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+        <a class= "btn btn-secondary" href="/">Atrás</a>
+        <h2>Usuarios que han realizado cambios</h2>
+        <h5>Eventos de tipo CHANGE</h5>
 
-      <label for="entry-date-fin">Fecha final </label>
-      <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
-    </div>
 
-      <button type="submit" class="btn btn-primary"> Enviar</button>
-        
-    </form>
+        <div style="min-height: 20px;"></div>
 
+        <form class="form-inline" method="POST" id="formUser">
+
+          <div class="form-group">
+              <label for="opciones">Selecciona un área:</label>
+              <select class="form-control" name="areas" id="areas" required>
+              <option value="" >Seleccione una opción</option>
+                  {% for op in areas %}
+                  <option value="{{op}}">{{ op }}</option>
+                  {% endfor %}
+              </select>
+          
+      
+            <label  for="entry-date-ini">Fecha inicial </label>
+            <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+      
+            <label for="entry-date-fin">Fecha final </label>
+            <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+          </div>
+      
+            <button type="submit" class="btn btn-primary"> Enviar</button>
+              
+          </form>
+
+
+          
     {% if datos %}
-        <h3>Usuarios que más cambios han realizado</h3>
-        <h5>En el área de {{area}}</h5>
-        <h5>En el periodo de {{fecha_ini}} a {{fecha_fin}}</h5>
+    <h3>Usuarios que más cambios han realizado</h3>
+    <h5>En el área de {{area}}</h5>
+    <h5>En el periodo de {{fecha_ini}} a {{fecha_fin}}</h5>
 
-        <!-- Contenedor principal -->
-    <div class="container-fluid">
-      <!-- Div para el gráfico -->
-      <div id="chart"></div>
+    <!-- Contenedor principal -->
+<div class="container-fluid">
+  <!-- Div para el gráfico -->
+  <div id="chart" class="col-6"></div>
+  <!-- Div para la tabla -->
+  <div id="space" class="col-12"></div>
       <!-- Div para la tabla -->
-      <div id="space"></div>
-          <!-- Div para la tabla -->
-      <div id="dataTable"></div>
-      <div id="space"></div>
+  <div id="dataTable"></div>
+  <div id="space"></div>
+</div>
+
+<div class="container">
+  <h4>Resultados de la búsqueda</h4>
+  <div class="row">
+    <div class="col">
+
+<table class="table table-bordered" id="dataTable">
+    <thead>
+        <tr>
+          <th >Usuario</th>
+          <th >Num. cambios</th>
+        </tr>
+    </thead>
+    <tbody>
+      {% for d in datos %}
+      <tr>
+        <td>{{d.Desc1}}</td>
+        <td>{{d.Apariciones}}</td>
+      </tr>
+      {% endfor %}
+        
+    </tbody>
+</table>
+</div>
+</div>
+</div>
+{% endif %}
+
+      
+
+        
+
+      </main>
     </div>
-  
-    <div class="container">
-      <h4>Resultados de la búsqueda</h4>
-      <div class="row">
-        <div class="col">
-
-    <table class="table table-bordered" id="dataTable">
-        <thead>
-            <tr>
-              <th >Usuario</th>
-              <th >Num. cambios</th>
-            </tr>
-        </thead>
-        <tbody>
-          {% for d in datos %}
-          <tr>
-            <td>{{d.Desc1}}</td>
-            <td>{{d.Apariciones}}</td>
-          </tr>
-          {% endfor %}
-            
-        </tbody>
-    </table>
   </div>
-</div>
-</div>
-    {% endif %}
+  
+  
+    
 
+  
    
 
 </body>
