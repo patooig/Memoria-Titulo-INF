@@ -21,6 +21,7 @@ connection.autocommit = True
 
 app = Flask(__name__)
 
+
 df_general = None
 
 
@@ -73,30 +74,53 @@ def loadFilestoServer(filename,ruta_origen):
 @app.route('/loadFiles', methods = ['GET','POST'])
 def loadFiles():
         if request.method == "POST":
-            file = request.files['filename'] #Capturo el archivo, PERO solo necesito el nombre
-            filename = file.filename #Nombre del archivo + extensión
-            print(filename) #Nombre del archivo + extensión
+            # file = request.files['filename'] #Capturo el archivo, PERO solo necesito el nombre
+            # filename = file.filename #Nombre del archivo + extensión
+            # print(filename) #Nombre del archivo + extensión
 
-            ruta_actual= os.path.dirname(os.path.abspath(__file__))
-            ruta_datos = os.path.join(ruta_actual, "datos")
-            ruta_datos = os.path.join(ruta_datos, filename)
+            # ruta_actual= os.path.dirname(os.path.abspath(__file__))
+            # ruta_datos = os.path.join(ruta_actual, "datos")
+            # ruta_datos = os.path.join(ruta_datos, filename)
 
-            res_load = loadFilestoServer(filename,ruta_datos)
+            # res_load = loadFilestoServer(filename,ruta_datos)
             
-            if res_load == 1:
-                cursor = connection.cursor()
-                route = "EXEC [dbo].[Events_Copy] @filename  = 'D:\DB\DATA\\" + filename + "'"
-                cursor.execute(route)
+            # if res_load == 1:
+            #     cursor = connection.cursor()
+            #     route = "EXEC [dbo].[Events_Copy] @filename  = " + filename + " "
+            #     cursor.execute(route)
 
-                #Imprimir resultado de ejecucion 
-                #! RECALCULAR FECHAS DE INCIO Y FINAL DE BUSQUEDA
-                print(route)
+            cursor = connection.cursor()
+            file = request.form['name_file']
+            cursor.execute("EXEC [dbo].[Events_Copy] @filename  = '"  + file + "' ")
+
            
-            return render_template('loadFiles.html', res_load=res_load,filename=filename)
+                #! RECALCULAR FECHAS DE INCIO Y FINAL DE BUSQUEDA
+            return render_template('loadFiles.html', global_fecha_final=global_fecha_final, file=file)
         
         else:
+            cursor = connection.cursor()
+            SQL = ("{CALL ObtenerArchivosEnCarpeta}")
+            cursor.execute(SQL)
+
+            # Obtener los resultados
+            resultados = []
+            while cursor.nextset():
+                try:
+                    resultados.extend(cursor.fetchall())
+                except pyodbc.ProgrammingError:
+                    pass
+
+            # Mostrar los resultados
+            mdf_files = []
+            sub_string = '20190101000000#201901312359'  #Nombre de archivo que no se debe mostrar, son los archivos originales de la base de datos
+            for resul in resultados:
+                if resul[0] is not None:
+                    name_file = str(resul[0])
+                    if name_file.endswith('.mdf') and not sub_string in name_file:
+                        mdf_files.append(name_file)
+
         
-            return render_template('loadFiles.html')
+            return render_template('loadFiles.html',global_fecha_final=global_fecha_final, mdf_files=mdf_files)
 
 @app.route('/moduleSearch',methods=['GET','POST'])
 def moduleSearch():
@@ -684,8 +708,16 @@ def getFechaFinal():
 
 global_areas = getListOfAreas() #Variable global con las areas de la planta
 global_dictAreas , global_dictModule = getDictOfAreas() #Variable global con el diccionario de areas y modulos
-global_fecha_inicial = getFechaInicial() #Variable global con la fecha inicial de la base de datos
-global_fecha_final = getFechaFinal() #Variable global con la fecha final de la base de datos
+
+def calcularNuevasFechas():
+    global global_fecha_inicial
+    global global_fecha_final
+    
+    global_fecha_inicial = getFechaInicial() #Variable global con la fecha inicial de la base de datos
+    global_fecha_final = getFechaFinal() #Variable global con la fecha final de la base de datos
+    
+    return 
+calcularNuevasFechas()
 
 if __name__ == '__main__':
     
