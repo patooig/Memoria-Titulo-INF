@@ -41,11 +41,23 @@
           <div class="col-md-12">
             <h1>Carga de archivos</h1>
             <p style="color: grey;font-size: 12px;">Proceso de carga de archivos MDF para integrar a la base de datos</p>
+            <p> Ultima fecha ingresada:  {{global_fecha_final}} </p>
 
             <form method="POST" enctype="multipart/form-data">
-                <input type="file" id="myFile" name="filename" accept=".mdf">
+                <!-- <input type="file" id="myFile" name="filename" accept=".mdf"> -->
+
+                <label for="opciones">Selecciona un archivo:</label>
+                <select class="form-control" name="name_file" id="name_file" required>
+                  <option value="" >Seleccione una opción</option>
+                      {% for op in mdf_files %}
+                      <option value="{{op}}">{{ op }}</option>
+                      {% endfor %}
+                </select>
+
                 <input type="submit" value="Cargar" class="btn btn-primary">
+
             </form>
+
           </div>
 
         </div>
