@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 import pyodbc
 import plotly
 import plotly_express as px
@@ -20,6 +20,10 @@ connection = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={da
 connection.autocommit = True
 
 app = Flask(__name__)
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return 'This page does not exist', 404
 
 
 df_general = None
@@ -70,7 +74,6 @@ def loadFilestoServer(filename,ruta_origen):
     
 
 
-
 @app.route('/loadFiles', methods = ['GET','POST'])
 def loadFiles():
         if request.method == "POST":
@@ -93,8 +96,10 @@ def loadFiles():
             file = request.form['name_file']
             cursor.execute("EXEC [dbo].[Events_Copy] @filename  = '"  + file + "' ")
 
-           
-                #! RECALCULAR FECHAS DE INCIO Y FINAL DE BUSQUEDA
+            cursor.close()
+
+            #! RECALCULAR FECHAS DE INCIO Y FINAL DE BUSQUEDA
+            calcularNuevasFechas()
             return render_template('loadFiles.html', global_fecha_final=global_fecha_final, file=file)
         
         else:
@@ -150,14 +155,41 @@ def moduleSearch():
     else:
         return render_template('moduleSearch.html', areas=global_areas)
  
-    
+
+@app.route('/deleteData', methods = ['GET','POST'])
+def deleteData():
+    cursor = connection.cursor()
+
+    if request.method == 'POST':
+
+        fecha_ini = ''
+        fecha_fin = ''
+
+        if 'formDelete001' in request.form:
+            fecha_ini = request.form['entry-date-ini-001'] + " 00:00:00"
+            fecha_fin = request.form['entry-date-fin-001'] + " 23:59:59"
+            #cursor.execute('DELET FROM DB001.DBO.Journal WHERE date_time>= ? and date_time <= ?',fecha_ini,fecha_fin)
+               
+         
+
+        if 'formDelete004' in request.form:
+            fecha_ini = request.form['entry-date-ini-004'] + " 00:00:00"
+            fecha_fin = request.form['entry-date-fin-004'] + " 23:59:59"
+            #cursor.execute('DELET FROM DB004.DBO.Journal WHERE date_time>= ? and date_time <= ?',fecha_ini,fecha_fin)
+       
+    cursor.close()
+
+    return render_template('deleteData.html',
+                           fecha_inicial=global_fecha_inicial,
+                           fecha_final=global_fecha_final)
+
 
 @app.route('/',methods = ['GET'])
 def home():
     return render_template('home.html')
 
 #Ver detalle de un modulo en un dia 
-@app.route('/moduleDetails/<module>/<type>/<date_ini>/<date_fin>',methods=['GET'])
+@app.route('/moduleDetails/<module>/<type>/<date_ini>/<date_fin>',methods=['GET','POST'])
 def detalleModulo(module,type,date_ini,date_fin):
     cursor = connection.cursor()
     fecha_inicial = str(date_ini) 
@@ -178,9 +210,10 @@ def detalleModulo(module,type,date_ini,date_fin):
     
     cursor.execute(SQL,(fecha_inicial,fecha_final,module))
     rows=cursor.fetchall()
-    cursor.close()
+   
 
     df = pd.DataFrame()
+
 
     df['Attribute'] = [r[0] for r in rows]
     df['Desc1']     = [r[1] for r in rows]
@@ -192,14 +225,39 @@ def detalleModulo(module,type,date_ini,date_fin):
     #Find the uniques
     uniques_attributes = df['Attribute'].unique()
     
-
-
     #Create a dict with the uniques attributes and the value is the sum of the count
     dict_uniques = dict()
     for u in uniques_attributes:
         dict_uniques[u] = df[df['Attribute'] == u]['count'].sum()   
         print(df[df['Attribute'] == u]['count'].sum()   )
     len_dict = len(dict_uniques)
+
+    if request.method == 'POST':
+        #Descargar tabla de datos en formato csv de rows
+        
+        SQL = ( "SELECT j.Date_time,j.Area,j.Unit,j.Module,j.Attribute,j.Desc1,j.Desc2 "
+                "FROM dbo.Journal as j "
+                "WHERE j.Date_Time >= ?  and j.Date_Time <=  ?  and j.Module = ? " + sql_extension +
+                "ORDER BY j.Date_Time "
+                )
+    
+        cursor.execute(SQL,(fecha_inicial,fecha_final,module))
+        data=cursor.fetchall()
+        dff = pd.DataFrame()
+        dff['Date_time'] = [r[0] for r in data]
+        #Correción de la fecha
+        dff['Date_time'] = pd.to_datetime(dff['Date_time'])
+        dff['Area']      = [r[1] for r in data]
+        dff['Unit']      = [r[2] for r in data]
+        dff['Module']    = [r[3] for r in data]
+        dff['Attribute'] = [r[4] for r in data]
+        dff['Desc1']     = [r[5] for r in data]
+        dff['Desc2']     = [r[6] for r in data]
+
+        file_name = 'data.csv'
+        file_path = os.path.join(os.path.dirname(__file__), file_name)
+        dff.to_csv(file_path, index=False)
+        return send_file(file_path, as_attachment=True)    
 
     return render_template('moduleDetails.html',
                            dictt = dict_uniques,
@@ -214,8 +272,6 @@ def detalleModulo(module,type,date_ini,date_fin):
 
 @app.route('/moduleDetails2/<module>/<date_ini>/<date_fin>',methods=['GET'])
 def detalleModulo2(module,date_ini,date_fin):
-
-    
     #Filtrar con el module, y el intervalo de fecha
 
     modulo = str(module)
@@ -236,11 +292,13 @@ def detalleModulo2(module,date_ini,date_fin):
     
 @app.route('/dashboard',methods=['GET','POST'])
 def dashboard():
+    show_data = 0
     if request.method == 'POST':
         #Obtener datos del formulario
         area          = request.form["areas"]
         fecha_inicial = request.form["entry-date-ini"] + " 00:00:00"
         fecha_final   = request.form["entry-date-fin"] + " 23:59:59"
+        show_data = 1
 
         def users():
             cursor = connection.cursor()
@@ -366,17 +424,22 @@ def dashboard():
         
         return render_template('dashboard.html',
                                areas=global_areas,
+                               area=area,
                                graphJSON=modulesChange(),
                                graphJSON2=lineaTemporalChange(),
                                graphJSON3=users(),
                                graphJSON4=eventosAlarmas(),
+                               show_data=show_data,
+                               fecha_ini=fecha_inicial,
+                               fecha_fin=fecha_final,
                                fecha_inicial=global_fecha_inicial,
                                fecha_final=global_fecha_final)
     else:
         return render_template('dashboard.html',
                                fecha_inicial=global_fecha_inicial,
                                fecha_final=global_fecha_final,
-                               areas=global_areas)
+                               areas=global_areas,
+                               show_data=show_data)
 
 @app.route('/frequencyUsers',methods=['GET','POST'])
 def frequencyUsers():
@@ -400,8 +463,8 @@ def frequencyUsers():
         fig.update_traces(textposition='inside', textinfo='percent+label')
         fig.update_layout(
             autosize=False,
-            width=700,
-            height=700,
+            width=600,
+            height=600,
             )
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -421,6 +484,45 @@ def frequencyUsers():
                                fecha_final=global_fecha_final,
                                areas=global_areas)
     
+
+@app.route('/userDetails/<user>/<area>/<fecha_inicial>/<fecha_final>',methods = ['GET','POST'])
+def userDetails(user,area,fecha_inicial,fecha_final):
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT j.Date_Time, j.Unit, j.Module, j.Module_Description,j.Attribute,j.Desc2 "
+    "FROM dbo.ChangeUser as j "
+    " WHERE j.Desc1 = ? and j.Area =  ? and j.Date_Time >= ? and j.Date_Time<= ? "
+    " ORDER BY j.Date_Time ", user, area, fecha_inicial, fecha_final)
+
+    data = cursor.fetchall()
+
+    
+    df = pd.DataFrame()
+    df['Fecha'] = [d[0] for d in data]
+    df['Unidad'] = [d[1] for d in data]
+    df['Modulo'] = [d[2] for d in data]
+    df['Descripcion'] = [d[3] for d in data]
+    df['Atributo'] = [d[4] for d in data]
+    df['Valor'] = [d[5] for d in data]
+    df['Fecha'] = pd.to_datetime(df['Fecha'], format='%Y-%m-%d %H:%M:%S')
+
+    if request.method == 'POST':
+        #Descargar tabla de datos en formato csv de rows
+        file_name = 'data.csv'
+        file_path = os.path.join(os.path.dirname(__file__), file_name)
+        df.to_csv(file_path, index=False)
+        return send_file(file_path, as_attachment=True)
+    
+    #Agrupar por atributo y contar la cantidad de cada uno de ellos, luego ordenar de mayor a menor
+    df2 = df.groupby(['Atributo']).size().reset_index(name='Cantidad').sort_values(by=['Cantidad'], ascending=False)
+
+    cursor.close()
+    return render_template('userDetails.html',
+                        df2=df2,
+                        user=user,
+                        area=area,
+                        fecha_inicial=fecha_inicial,
+                        fecha_final=fecha_final)
 
 
 @app.route('/areasymodulos', methods = ["GET","POST"])
@@ -621,6 +723,13 @@ def frecuentesJournal():
                                areas=global_areas)
 
 
+@app.route('/generalSearch', methods = ['GET','POST'])
+def generalSearch():
+
+    if request.method == 'POST':
+        module= request.form['']
+
+    return render_template('generalSearch.html')
 
 
 @app.route('/frecuentesJournal2',methods=['GET','POST'])
@@ -637,8 +746,7 @@ def frecuentesJournal2():
         
         df = pd.DataFrame(pd.read_sql_query(sql = SQL,
                                             con= connection ,
-                                            params= ( area,fecha_inicial,fecha_final )) 
-                                            , 
+                                            params= ( area,fecha_inicial,fecha_final )) , 
                                             columns=['Date_time','Module','Module_Description','Attribute','Desc1','Desc2']) 
         df['Date_time'] = pd.to_datetime(df['Date_time'])
 
@@ -722,5 +830,5 @@ calcularNuevasFechas()
 if __name__ == '__main__':
     
     #app.run(debug=True, use_debugger=False, use_reloader=False) #Use production server
-    app.run( debug=True) #Use development server host='0.0.0.0'
+    app.run(debug=True) #Use development server host='0.0.0.0'
    
