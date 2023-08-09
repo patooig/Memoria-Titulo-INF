@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename= '/css/bootstrap.min.css') }}">
+
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eliminación de datos</title>
+
+</head>
+
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container"> 
+      
+          <div class="collapse navbar-collapse" id="navbarsExample07">
+            <ul class="navbar-nav mr-auto">
+              <li class="nav-item active">
+                <a class="nav-link" href="/">Inicio </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/dashboard">Dashboard</a>
+              </li>
+            </ul>
+            <img src="/static/img/arauco.jpg" alt="logo" height="25" width="100">
+          </div>
+        </div>
+      </nav>
+    
+      <div class="container-fluid">
+      <!-- espacio entre el nav y el contenido -->
+      <br>
+      <br>
+
+        <div class="row">
+          <div class="col-md-1">
+          </div>
+
+          <div class="col-md-3">
+            <h1>Eliminación de datos APP-001</h1>
+            <p style="color: grey;font-size: 12px;">Eliminación de información en base de datos APP-001</p>
+            <p>Periodo de información APP-001:</p>
+
+            <form method="POST">
+                <label for="entry-date-ini">Fecha inicial </label>
+                <input class="form-control" type="date" name="entry-date-ini-001" id="entry-date-ini-001" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+                
+                <label for="entry-date-fin">Fecha final </label>
+                <input class="form-control" type="date" name="entry-date-fin-001" id="entry-date-fin-001" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+                <div style="min-height: 20px;"></div>
+                <input name="formDelete001" type="submit" value="Eliminar" class="btn btn-danger">
+            </form>
+
+          </div>
+
+          <div class="col-md-2"></div>
+
+          <div class="col-md-3">
+            <h1>Eliminación de datos APP-004</h1>
+            <p style="color: grey;font-size: 12px;">Eliminación de información en base de datos APP-004</p>
+            <p> Periodo de información APP-004 desde <b>{{fecha_inicial}}</b> al <b>{{fecha_final}}</b></p>
+
+            <form method="POST">
+
+                <label for="entry-date-ini">Fecha inicial </label>
+                <input class="form-control" type="date" name="entry-date-ini-004" id="entry-date-ini-004" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+                
+                <label for="entry-date-fin">Fecha final </label>
+                <input class="form-control" type="date" name="entry-date-fin-004" id="entry-date-fin-004" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+                <div style="min-height: 20px;"></div>
+                <input name="formDelete004" type="submit" value="Eliminar" class="btn btn-danger">
+          </div>
+        </div>
+      </div>
+
+
+          
+             
+</body>
+
+</html>

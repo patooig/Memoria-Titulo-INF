@@ -25,7 +25,6 @@
 
   }
   #descr{
-    
     text-align: center;
     margin: 1px;
     padding: 1px;
@@ -152,28 +151,11 @@
 </body>
 
 
-
-
-<!-- 
-  <script src="{{ url_for('static', filename='/js/plotly-latest.min.js') }}"></script>
-  <script type='text/javascript'>
-  var graphs = {{ graphJSON | safe }};
-  Plotly.plot('chart',graphs,{});
-</script> -->
-
 <script src="{{ url_for('static', filename='/js/plotly-latest.min.js') }}"></script>
   <script type="text/javascript">
     var graphJSON = {{ graphJSON | safe }};
     Plotly.newPlot('chart', graphJSON.data, graphJSON.layout);
 </script>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
-<script>
-$(document).ready(function(){
-  $("button").click(function(){
-    $("#spinner").show();
-  });
-});
-</script>
 
 </html>

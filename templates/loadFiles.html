@@ -35,13 +35,43 @@
       </nav>
     
       <div class="container-fluid">
+      <!-- espacio entre el nav y el contenido -->
+      <br>
+      <br>
 
         <div class="row">
+          <div class="col-md-1">
+          </div>
 
-          <div class="col-md-12">
-            <h1>Carga de archivos</h1>
+          <div class="col-md-3">
+            <h1>Carga de archivos APP-001</h1>
             <p style="color: grey;font-size: 12px;">Proceso de carga de archivos MDF para integrar a la base de datos</p>
-            <p> Ultima fecha ingresada:  {{global_fecha_final}} </p>
+            <p> Ultima fecha ingresada APP-01: </p>
+
+            <form method="POST" enctype="multipart/form-data">
+                <!-- <input type="file" id="myFile" name="filename" accept=".mdf"> -->
+
+                <label for="opciones">Selecciona un archivo:</label>
+                <select class="form-control" name="name_file" id="name_file" required>
+                  <!-- <option value="" >Seleccione una opción</option>
+                      {% for op in mdf_files %}
+                      <option value="{{op}}">{{ op }}</option>
+                      {% endfor %} -->
+                </select>
+
+                <input id="disabledInput" type="submit" value="Cargar" class="btn btn-primary">
+
+            </form>
+
+          </div>
+
+          <div class="col-md-2"></div>
+
+          <div class="col-md-3">
+            <h1>Carga de archivos APP-04</h1>
+            <p style="color: grey;font-size: 12px;">Proceso de carga de archivos MDF para integrar a la base de datos</p>
+            <p> Ultima fecha ingresada APP-04:
+              <b>{{global_fecha_final}}</b>   </p>
 
             <form method="POST" enctype="multipart/form-data">
                 <!-- <input type="file" id="myFile" name="filename" accept=".mdf"> -->
@@ -55,17 +85,11 @@
                 </select>
 
                 <input type="submit" value="Cargar" class="btn btn-primary">
-
-            </form>
-
           </div>
-
         </div>
-
       </div>
 
       {% if res_load %}
-
       {% if res_load == 1 %}
       <div class="alert alert-success" role="alert">
         Archivo {{ filename }} cargado correctamente

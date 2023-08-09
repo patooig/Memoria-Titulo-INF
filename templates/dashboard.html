@@ -8,7 +8,15 @@
 
 </head>
 
- 
+ <style>
+  #descr{
+    
+    text-align: center;
+    margin: 1px;
+    padding: 1px;
+  
+  }
+ </style>
 
 <body>
 
@@ -30,9 +38,9 @@
   </nav>
 
     <div class="container-fluid">
-
       <div class="row">
-        <div class="col-md-12">
+        
+        <main class="col-md-12 ml-sm-auto">
           <h1>Dashboard</h1>
           <p style="color: grey;font-size: 12px;">Resumen de un área para un periodo de tiempo especifico</p>
         
@@ -50,7 +58,7 @@
         
     
           <label  for="entry-date-ini">Fecha inicial </label>
-          <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_inicial}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
+          <input class="form-control" type="date" name="entry-date-ini" id="entry-date-ini" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
     
           <label for="entry-date-fin">Fecha final </label>
           <input class="form-control" type="date" name="entry-date-fin" id="entry-date-fin" value="{{fecha_final}}" min="{{fecha_inicial}}" max="{{fecha_final}}">
@@ -60,8 +68,18 @@
             
         </form>
 
-      </div>
+      </main>
+
+      <div style="min-height: 20px;"></div>
   
+      {% if show_data %}
+      <div class="container-fluid" id="descr">
+        <p>Area : {{area}}</p>
+        <p>Fecha inicial : {{fecha_ini}}</p>
+        <p>Fecha final : {{fecha_fin}}</p>
+    </div>
+      {% endif %}
+
         <div style="min-height: 20px;"></div>
   
         

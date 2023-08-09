@@ -23,6 +23,9 @@
     width: 50%;
 
   }
+  #info{
+    text-align: center;
+  }
 </style>
 
 <body>
@@ -83,9 +86,13 @@
 
           
     {% if datos %}
-    <h3>Usuarios que más cambios han realizado</h3>
-    <h5>En el área de {{area}}</h5>
-    <h5>En el periodo de {{fecha_ini}} a {{fecha_fin}}</h5>
+    <div class="container-fluid" id="info">
+      <p>Area : {{area}}</p>
+      <p>Fecha inicial : {{fecha_ini}}</p>
+      <p>Fecha final : {{fecha_fin}}</p>
+    </div>
+    <div style="min-height: 20px;"></div>
+
 
     <!-- Contenedor principal -->
 <div class="container-fluid">
@@ -108,6 +115,7 @@
         <tr>
           <th >Usuario</th>
           <th >Num. cambios</th>
+          <th >Detalle</th>
         </tr>
     </thead>
     <tbody>
@@ -115,6 +123,7 @@
       <tr>
         <td>{{d.Desc1}}</td>
         <td>{{d.Apariciones}}</td>
+        <td><a href="/userDetails/{{d.Desc1}}/{{area}}/{{fecha_ini}}/{{fecha_fin}}">Ver detalle</a></td>
       </tr>
       {% endfor %}
         
